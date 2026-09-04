@@ -1,0 +1,31 @@
+.venv/
+docs/local/
+examples/*/.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+.artifacts/
+.reference/
+reports/
+*.egg-info/
+.DS_Store
+CLAUDE.local.md
+.envrc.local
+.rumdl_cache/
+.claude/*
+!.claude/CLAUDE.md
+*.bundle
+
+# ------------------------------------------------------------------------------
+# Nix / direnv
+# ------------------------------------------------------------------------------
+/result
+/result-*
+.direnv/
+# Generated into the worktree by git-hooks.nix's shellHook.
+/.pre-commit-config.yaml
+!.envrc
