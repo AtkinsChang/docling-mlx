@@ -21,7 +21,7 @@ stage owns Docling labels, page state, artifact resolution, and accelerator vali
 
 ## Official Docling hooks
 
-The package entry point exposes only the factories Docling provides (observed at 2.124.0):
+The package entry point exposes only the factories Docling provides (observed at 2.126.0):
 
 ```text
 docling entry point
@@ -52,7 +52,7 @@ uses Docling's VLM engine-options mixin. All table stages use `enable_remote_ser
 
 ## Hooks Docling does not provide
 
-Docling (as of 2.124.0) directly constructs `DocumentPictureClassifier` and its chart stages; it
+Docling (as of 2.126.0) directly constructs `DocumentPictureClassifier` and its chart stages; it
 has no factory for either. `configure(pipeline: StandardPdfPipeline)` replaces those initialized
 entries only when `picture_classification_options` is `MlxDocumentPictureClassifierOptions` or
 `chart_extraction_options` is `MlxChartExtractionModelOptions`.

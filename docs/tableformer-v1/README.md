@@ -121,7 +121,7 @@ and adds the batch dimension. CWH is intentional and differs from conventional C
 
 The source-compatible HTML round trip recognizes spans only through 20. When decoded OTSL would
 produce a colspan or rowspan above 20, postprocessing uses 1, matching
-`docling-ibm-models==4.0.1` behavior.
+`docling-ibm-models==4.0.2` behavior.
 
 ## Qualification
 

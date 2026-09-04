@@ -28,7 +28,7 @@ Docling table factory
       └── two-layer bbox decoder
 ```
 
-The stage preserves Docling 2.124.0's table-selection, page-render, round-then-scale crop, OTSL,
+The stage preserves Docling 2.126.0's table-selection, page-render, round-then-scale crop, OTSL,
 span/header, text-matching, and coordinate contracts. It writes matched text to `TableCell.text`
 directly rather than relying on the upstream V2 adaptor's legacy `bbox.token` compatibility path.
 Debug table visualization is not implemented.
