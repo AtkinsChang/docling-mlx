@@ -18,8 +18,8 @@ uv sync --group dev --group reference
 
 The optional Nix flake devshell provides the formatters, linters, `uv`, `gitleaks`, and `committed`;
 `direnv allow` (via nix-direnv) or `nix develop` provides it and installs the git hooks (pre-commit:
-treefmt + gitleaks; commit-msg: committed). The `uvx` commands in "Before every commit" are the
-canonical checks and are the checks CI runs. Nix style: group dotted keys (`foo = { a = …; b = …; }`,
+treefmt + gitleaks; commit-msg: committed). The commands in "Before every commit" are the canonical
+checks and are the checks CI runs. Nix style: group dotted keys (`foo = { a = …; b = …; }`,
 not `foo.a = …; foo.b = …;`).
 
 ## Developing on Linux
@@ -38,7 +38,8 @@ The `mlx`, `parity`, and `release` lanes stay on Apple Silicon. `require_apple_s
 non-Darwin hosts, and the detector grid-sample kernel is built with `mx.fast.metal_kernel`, which
 raises `RuntimeError: [metal_kernel] No Metal back-end` wherever Metal is missing. Selected lanes
 also need staged artifacts and, for parity, the `reference` group; on Linux those are missing
-setup, not a qualified result.
+setup, not a qualified result. CI covers the `mlx` lane on a macOS runner, so a change to an engine
+is still qualified without a local Mac; `parity` and `release` are not.
 
 ## Before every commit
 
@@ -53,7 +54,11 @@ uvx --from actionlint-py actionlint
 uvx ruff check .
 uvx ruff format --check .
 uvx --with 'reuse[charset-normalizer]' reuse lint
+npx --yes prettier@3.9.6 --check '.github/**/*.yaml'
 ```
+
+Prettier owns the workflow YAML because no other formatter in the set reads it; keep the pinned
+version here and in `ci.yaml` the same.
 
 ## Checks and lanes
 
@@ -89,6 +94,19 @@ not a qualified result. Source-dependent tests require these variables:
 
 Keep machine-specific lane variables in the ignored `.envrc.local` file.
 
+The staging tool downloads every artifact and source the `mlx` lane reads, each pinned to the
+revision `src/docling_mlx/presets.py`, `tools/layout_egret/source.py`, and
+`tools/document_figure/source.py` record. It writes the flat `.artifacts` layout the lane expects,
+leaves an already staged directory alone so a second run costs nothing, and prints the source
+variables to export:
+
+```bash
+uv run --no-sync python -m tools.stage_lane_inputs
+```
+
+It takes `--artifacts DIR` and `--sources DIR` to stage elsewhere. The parity lane needs the
+TableFormer sources and the detector inputs below as well.
+
 The TableFormer download helpers print the cache directory to export:
 
 ```bash
@@ -98,24 +116,6 @@ uv run --no-sync python -c \
   'from tools.tableformer_v2.source import download_source; print(download_source())'
 export DOCLING_MLX_TABLEFORMER_V1_SOURCE=/path/printed/by/the/first/command
 export DOCLING_MLX_TABLEFORMER_V2_SOURCE=/path/printed/by/the/second/command
-```
-
-Download each official Egret source at the immutable revision recorded in
-[`docs/layout-egret/validation.md`](docs/layout-egret/validation.md):
-
-```bash
-export DOCLING_MLX_EGRET_MEDIUM_SOURCE=/path/to/egret-medium-source
-export DOCLING_MLX_EGRET_LARGE_SOURCE=/path/to/egret-large-source
-export DOCLING_MLX_EGRET_XLARGE_SOURCE=/path/to/egret-xlarge-source
-hf download docling-project/docling-layout-egret-medium \
-  --revision REV \
-  --local-dir "$DOCLING_MLX_EGRET_MEDIUM_SOURCE"
-hf download docling-project/docling-layout-egret-large \
-  --revision REV \
-  --local-dir "$DOCLING_MLX_EGRET_LARGE_SOURCE"
-hf download docling-project/docling-layout-egret-xlarge \
-  --revision REV \
-  --local-dir "$DOCLING_MLX_EGRET_XLARGE_SOURCE"
 ```
 
 Produce the detector parity inputs from the same pinned DPBench revision used by
@@ -134,9 +134,15 @@ _prepare_benchmark(_snapshot_path(), inputs.parent, 3)
 PY
 ```
 
-CI runs the portable checks on Ubuntu: frozen dev sync, mypy, default pytest, wheel build, and an
-installed-wheel import smoke, plus a separate uvx-based lint job. It does not qualify MLX, parity,
-or release artifacts.
+CI runs three jobs. On Ubuntu, `lint` runs the repository-wide native checks plus a full-history
+gitleaks scan, a Prettier check of the workflow YAML, and `committed` on pull requests; `test` runs
+the portable lane on Python 3.13 and 3.14: lock check, frozen dev sync, mypy, default pytest, wheel
+build, and an installed-wheel import smoke. On a GitHub-hosted Apple Silicon macOS runner, `mac`
+runs the default lane, stages the pinned inputs with `tools/stage_lane_inputs.py`, runs the `mlx`
+lane and fails when it reports a skip, and finishes with the wheel build and import smoke against
+the real Metal MLX wheel. The `parity` and `release` lanes stay local to the maintainer; they need
+the reference dependencies, the source snapshots, and staged reference captures that CI does not
+carry.
 
 ## Stage artifacts
 
