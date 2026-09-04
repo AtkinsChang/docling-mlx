@@ -1,17 +1,6 @@
 name: Publish
 
 on:
-  workflow_call:
-    inputs:
-      tag:
-        description: Release tag to build and publish
-        required: true
-        type: string
-      repository:
-        description: Package index (pypi or testpypi)
-        required: false
-        default: pypi
-        type: string
   workflow_dispatch:
     inputs:
       repository:
@@ -20,6 +9,11 @@ on:
         default: testpypi
         type: choice
         options: [testpypi, pypi]
+      tag:
+        description: Release tag to build and publish (defaults to the selected ref)
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
