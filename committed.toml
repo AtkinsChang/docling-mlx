@@ -1,0 +1,35 @@
+style = "conventional"
+# Convention: description starts lowercase.
+subject_capitalized = false
+# Whole header line, including "feat(scope): ".
+subject_length = 120
+# Body wraps at 100; the check is soft, so trailing URLs/paths are exempt.
+line_length = 100
+allowed_types = [
+  "feat",
+  "fix",
+  "docs",
+  "style",
+  "refactor",
+  "perf",
+  "test",
+  "build",
+  "ci",
+  "chore",
+  "revert",
+]
+allowed_scopes = [
+  "layout/heron",
+  "layout/egret",
+  "tableformer/v1",
+  "tableformer/v2",
+  "granite-vision",
+  "document-figure",
+  "engines",
+  "stages",
+  "pipeline",
+  "tools",
+  "licensing",
+  "deps",
+  "packaging",
+]
