@@ -10,11 +10,12 @@ from pathlib import Path
 import numpy as np
 
 from docling_mlx._models.tableformer_v2.config import TABLEFORMER_V2_TOKENS
+from tools.pinned_versions import locked_versions
 from tools.tableformer_v2.capture_reference import (
     ARRAY_SPECS,
     CAPTURE_SCHEMA_VERSION,
     MAX_GENERATION_STEPS,
-    REFERENCE_VERSIONS,
+    REFERENCE_PACKAGES,
     array_sha256,
     otsl_from_ids,
     write_compressed_npz,
@@ -60,7 +61,7 @@ def _write_reference(directory: Path) -> None:
         "token_map": list(TABLEFORMER_V2_TOKENS),
         "generation": {"max_generation_steps": MAX_GENERATION_STEPS},
         "runtime": {
-            "dependencies": REFERENCE_VERSIONS,
+            "dependencies": locked_versions(REFERENCE_PACKAGES),
             "torch": {
                 "device": "cpu",
                 "eval": True,

@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import importlib.metadata
 import io
 import json
 import os
@@ -26,18 +25,13 @@ from tools.layout_egret.convert_weights import (
     sha256,
     verify_source,
 )
+from tools.pinned_versions import require_locked_versions
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 FIXTURE_PATH = REPOSITORY_ROOT / "tests/fixtures/layout_heron/benchmark_gradient.png"
 CAPTURE_SCHEMA_VERSION = 1
 CAPTURE_ARCHIVE = "outputs.npz"
-REFERENCE_VERSIONS = {
-    "numpy": "2.5.2",
-    "pillow": "12.3.0",
-    "torch": "2.14.0",
-    "torchvision": "0.29.0",
-    "transformers": "5.8.1",
-}
+REFERENCE_PACKAGES = ("numpy", "pillow", "torch", "torchvision", "transformers")
 
 
 @dataclass(frozen=True, slots=True)
@@ -87,13 +81,9 @@ def write_compressed_npz(path: Path, arrays: dict[str, np.ndarray]) -> None:
 
 
 def _reference_versions() -> dict[str, str]:
-    actual = {name: importlib.metadata.version(name) for name in REFERENCE_VERSIONS}
-    if actual != REFERENCE_VERSIONS or sys.version_info[:2] != (3, 13):
-        raise RuntimeError(
-            "Egret capture requires Python 3.13 and the pinned reference versions: "
-            f"expected {REFERENCE_VERSIONS}, got {actual}"
-        )
-    return actual
+    if sys.version_info[:2] != (3, 13):
+        raise RuntimeError("Egret capture requires Python 3.13")
+    return require_locked_versions(REFERENCE_PACKAGES, context="Egret capture")
 
 
 def _configure_torch(torch: Any, cpu_threads: int) -> dict[str, Any]:

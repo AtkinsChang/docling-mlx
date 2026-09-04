@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import importlib.metadata
 import io
 import json
 import os
@@ -27,18 +26,19 @@ import numpy as np
 from PIL import Image
 
 from docling_mlx._models.tableformer_v2.config import TABLEFORMER_V2_TOKENS
+from tools.pinned_versions import require_locked_versions
 from tools.tableformer_v2.source import SOURCE_REPO, SOURCE_REVISION, sha256, verify_source
 
 CAPTURE_SCHEMA_VERSION = 1
 MAX_GENERATION_STEPS = 512
-REFERENCE_VERSIONS = {
-    "docling-ibm-models": "4.0.1",
-    "numpy": "2.5.2",
-    "pillow": "12.3.0",
-    "torch": "2.14.0",
-    "torchvision": "0.29.0",
-    "transformers": "5.8.1",
-}
+REFERENCE_PACKAGES = (
+    "docling-ibm-models",
+    "numpy",
+    "pillow",
+    "torch",
+    "torchvision",
+    "transformers",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -111,13 +111,7 @@ def otsl_from_ids(token_ids: list[int] | tuple[int, ...]) -> list[str]:
 
 
 def _verify_reference_versions() -> dict[str, str]:
-    actual = {name: importlib.metadata.version(name) for name in REFERENCE_VERSIONS}
-    if actual != REFERENCE_VERSIONS:
-        raise RuntimeError(
-            "TableFormerV2 capture requires the pinned reference versions: "
-            f"expected {REFERENCE_VERSIONS}, got {actual}"
-        )
-    return actual
+    return require_locked_versions(REFERENCE_PACKAGES, context="TableFormerV2 capture")
 
 
 def _configure_torch(torch: Any, cpu_threads: int) -> dict[str, Any]:

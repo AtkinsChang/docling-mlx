@@ -60,8 +60,8 @@ dev = [
   "docling-slim[format-pdf]",
 ]
 reference = [
-  "docling-ibm-models==4.0.1",
-  "transformers==5.8.1",
+  "docling-ibm-models==4.0.2",
+  "transformers==5.16.1",
   "torch==2.14.0",
   "torchvision==0.29.0",
   "pypdfium2==5.13.0",
