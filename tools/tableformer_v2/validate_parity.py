@@ -22,11 +22,12 @@ from docling_mlx.engines.table_structure.tableformer_v2.preprocessing import (
     preprocess_images,
     resize_pil_rgb_uint8,
 )
+from tools.pinned_versions import locked_versions
 from tools.tableformer_v2.capture_reference import (
     ARRAY_SPECS,
     CAPTURE_SCHEMA_VERSION,
     MAX_GENERATION_STEPS,
-    REFERENCE_VERSIONS,
+    REFERENCE_PACKAGES,
     array_sha256,
     otsl_from_ids,
 )
@@ -168,7 +169,7 @@ def _load_reference(reference: Path) -> tuple[dict[str, Any], list[dict[str, np.
     if metadata.get("generation") != {"max_generation_steps": MAX_GENERATION_STEPS}:
         raise ValueError("Reference generation contract does not match TableFormerV2")
     runtime = metadata.get("runtime", {})
-    if runtime.get("dependencies") != REFERENCE_VERSIONS:
+    if runtime.get("dependencies") != locked_versions(REFERENCE_PACKAGES):
         raise ValueError("Reference does not use the pinned TableFormerV2 dependencies")
     torch_settings = runtime.get("torch", {})
     if (

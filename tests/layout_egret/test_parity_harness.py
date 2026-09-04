@@ -15,7 +15,7 @@ from tools.layout_egret.capture_reference import (
     CAPTURE_ARCHIVE,
     CAPTURE_SCHEMA_VERSION,
     FIXTURE_PATH,
-    REFERENCE_VERSIONS,
+    REFERENCE_PACKAGES,
     REPOSITORY_ROOT,
     array_sha256,
     write_compressed_npz,
@@ -25,6 +25,7 @@ from tools.layout_egret.validate_parity import (
     _load_reference,
     _public_detection_gates,
 )
+from tools.pinned_versions import locked_versions
 
 
 def _arrays() -> dict[str, np.ndarray]:
@@ -68,7 +69,7 @@ def _write_reference(path: Path) -> dict[str, object]:
         ],
         "archive": {"file": CAPTURE_ARCHIVE, "sha256": sha256(archive)},
         "runtime": {
-            "dependencies": REFERENCE_VERSIONS,
+            "dependencies": locked_versions(REFERENCE_PACKAGES),
             "torch": {
                 "device": "cpu",
                 "eval": True,

@@ -24,18 +24,19 @@ from docling.datamodel.pipeline_options import TableFormerMode
 from PIL import Image
 
 from docling_mlx._models.tableformer_v1.config import TABLEFORMER_V1_TOKENS
+from tools.pinned_versions import require_locked_versions
 from tools.tableformer_v1.source import SOURCE_REVISION, profile_id, sha256, verify_source
 
 CAPTURE_SCHEMA_VERSION = 1
-REFERENCE_VERSIONS = {
-    "docling": "2.124.0",
-    "docling-ibm-models": "4.0.1",
-    "numpy": "2.5.2",
-    "opencv-python": "5.0.0.93",
-    "pillow": "12.3.0",
-    "torch": "2.14.0",
-    "torchvision": "0.29.0",
-}
+REFERENCE_PACKAGES = (
+    "docling",
+    "docling-ibm-models",
+    "numpy",
+    "opencv-python",
+    "pillow",
+    "torch",
+    "torchvision",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -105,12 +106,7 @@ def otsl_from_ids(ids: list[int]) -> list[str]:
 
 
 def _versions() -> dict[str, str]:
-    from importlib.metadata import version
-
-    actual = {name: version(name) for name in REFERENCE_VERSIONS}
-    if actual != REFERENCE_VERSIONS:
-        raise RuntimeError(f"Pinned TableFormer v1 reference versions required: {actual}")
-    return actual
+    return require_locked_versions(REFERENCE_PACKAGES, context="TableFormer v1 capture")
 
 
 def configure_torch(torch: Any, cpu_threads: int) -> dict[str, Any]:

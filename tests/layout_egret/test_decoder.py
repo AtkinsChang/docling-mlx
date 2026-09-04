@@ -44,6 +44,7 @@ def _load_requirements() -> None:
         mx = import_module("mlx.core")
         torch = import_module("torch")
         transformers = import_module("transformers")
+        pinned_versions = import_module("tools.pinned_versions")
         tree_flatten = import_module("mlx.utils").tree_flatten
         torch_config = import_module("transformers.models.d_fine.configuration_d_fine")
         torch_model = import_module("transformers.models.d_fine.modeling_d_fine")
@@ -58,7 +59,10 @@ def _load_requirements() -> None:
     TorchDFineMLP = torch_model.DFineMLP
     DFineDecoderConfig = mlx_config.DFineDecoderConfig
     DFineDecoder = mlx_decoder.DFineDecoder
-    assert transformers.__version__ == "5.8.1"
+    assert (
+        transformers.__version__
+        == pinned_versions.locked_versions(["transformers"])["transformers"]
+    )
 
 
 def _decoder_config() -> Any:

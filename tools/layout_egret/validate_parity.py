@@ -27,13 +27,14 @@ from tools.layout_egret.capture_reference import (
     CAPTURE_ARCHIVE,
     CAPTURE_SCHEMA_VERSION,
     FIXTURE_PATH,
-    REFERENCE_VERSIONS,
+    REFERENCE_PACKAGES,
     REPOSITORY_ROOT,
     array_sha256,
 )
 from tools.layout_egret.convert_weights import (
     sha256,
 )
+from tools.pinned_versions import locked_versions
 
 DETECTION_SCORE_THRESHOLD = 0.3
 DETECTION_SCORE_MAX_ABS = 1e-2
@@ -77,7 +78,7 @@ def _load_reference(reference: Path) -> tuple[dict[str, Any], dict[str, np.ndarr
         raise ValueError("Reference processor is not the pinned Torchvision backend")
     runtime = metadata.get("runtime", {})
     torch_settings = runtime.get("torch", {})
-    if runtime.get("dependencies") != REFERENCE_VERSIONS or not all(
+    if runtime.get("dependencies") != locked_versions(REFERENCE_PACKAGES) or not all(
         (
             torch_settings.get("device") == "cpu",
             torch_settings.get("eval") is True,
