@@ -12,8 +12,10 @@ The presets resolve to these published artifacts, converted from the listed upst
 
 **Reference implementation versus pinned reference.** The native D-FINE and HGNetV2 modules were
 written after Hugging Face Transformers 5.8.1 (commit
-`cc832f9055ba11c8c55f918ab4bda9472b910d48`, `transformers/models/d_fine`), the same release pinned
-as the parity oracle.
+`cc832f9055ba11c8c55f918ab4bda9472b910d48`, `transformers/models/d_fine`). The `d_fine` changes
+through currently pinned 5.16.1, the parity oracle, are neutral for these configurations: an
+MPS-only position-embedding dtype, a feature-level branch that three-level configs never take, and
+cache and transpose refactors.
 
 Phase A exercised the generic engine against the stored Egret-medium DPBench
 baselines using the no-op native-path harness:

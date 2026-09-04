@@ -94,7 +94,7 @@ enabled selected stage.
 
 ## Chart extraction component
 
-Docling (as of 2.124.0) has no chart factory. `MlxStandardPdfPipeline` places
+Docling (as of 2.126.0) has no chart factory. `MlxStandardPdfPipeline` places
 `MlxGraniteVisionChartExtractionModel` after picture classification without application subclassing;
 call `configure()` directly only after constructing a standard pipeline with the MLX-owned picture
 and chart stages disabled.
@@ -132,7 +132,7 @@ For each image it sends active prompts in CSV, summary, then code order and writ
 - `<chart2code>` to `CodeMetaField(language=PYTHON)`.
 
 One parser failure skips only that result. Unparsable Granite responses are caught broadly and
-logged; they yield an empty table or leave chart metadata unchanged, matching Docling 2.124.0, and
+logged; they yield an empty table or leave chart metadata unchanged, matching Docling 2.126.0, and
 there is no option to make them raise. The Python parser accepts Docling's fenced format and
 syntactically valid bare Python because the pinned official model can emit bare code. Arbitrary
 prose and non-Python fences remain rejected.

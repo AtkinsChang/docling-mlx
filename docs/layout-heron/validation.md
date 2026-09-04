@@ -14,8 +14,9 @@ The presets resolve to these published artifacts, converted from the listed upst
 
 **Adaptation source versus pinned reference.** The native RT-DETR-v2 modules and the shared detector
 primitives were adapted from mlx-vlm 0.6.4 (commit
-`2b909c68a2735914163ea7cb1bac690ec868484d`, `mlx_vlm/models/rt_detr_v2`). Parity is qualified
-against `transformers.RTDetrV2ForObjectDetection` from the pinned reference group.
+`2b909c68a2735914163ea7cb1bac690ec868484d`, `mlx_vlm/models/rt_detr_v2`), a tree unchanged in
+currently locked mlx-vlm 0.6.17. Parity is qualified against
+`transformers.RTDetrV2ForObjectDetection` from the pinned reference group.
 
 Phase B validates `PekingU/rtdetr_v2_r18vd`, `r34vd`, `r50vd`, and `r101vd`
 against `transformers.RTDetrV2ForObjectDetection` on CPU. The parity lane uses

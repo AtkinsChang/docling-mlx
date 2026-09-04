@@ -1,21 +1,23 @@
 # Granite Vision 4.1 adaptor validation
 
-Requalified on 2026-09-02 on Apple Silicon against Docling 2.124.0. The qualification covers the
+Requalified on 2026-09-05 on Apple Silicon against Docling 2.126.0. The qualification covers the
 corrected engine and the table/chart adaptor boundary using the pinned official artifact. It does not
 claim Torch-to-MLX tensor parity, general document accuracy, or a speedup over another backend.
 
 ## Qualified environment
 
 - Apple M4 Pro, 48 GiB unified memory; macOS 26.5.2 arm64.
-- Python 3.13.13; MLX 0.32.2; Docling/Docling Slim 2.124.0.
-- `uv.lock` resolves MLX 0.32.2, `mlx-vlm==0.6.4`, `mlx-audio==0.4.6`, Transformers 5.8.1,
+- Python 3.13.13; MLX 0.32.2; Docling/Docling Slim 2.126.0.
+- `uv.lock` resolves MLX 0.32.2, `mlx-vlm==0.6.17`, `mlx-audio==0.5.1`, Transformers 5.16.1,
   Torch 2.14.0, torchvision 0.29.0, and OpenCV 5.0.0.93.
 - Official model: `ibm-granite/granite-vision-4.1-4b` revision
   `dd48e97503de471803850df70843cf9eb5da8712`, unchanged BF16 artifact.
 
 **Adaptation source versus pinned reference.** The adapted OTSL and chart parser sources from
-Docling 2.123.1 are unchanged in currently pinned Docling 2.124.0, and this component is validated
-against that version.
+Docling 2.123.1 are unchanged in currently pinned Docling 2.126.0, and this component is validated
+against that version. The mlx-vlm `granite4_vision` vision, processing, and model modules are
+unchanged in locked 0.6.17; its language module now builds RoPE through `initialize_rope`, which
+returns the same `nn.RoPE` for this artifact because its config declares no rope scaling.
 
 ## Adaptor contracts
 

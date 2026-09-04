@@ -1,7 +1,7 @@
 # EfficientNet validation
 
-Recorded on 2026-09-02 on Apple Silicon (macOS arm64), with MLX 0.32.2,
-Transformers 5.8.1, Torch 2.14.0, NumPy 2.5.2, and Pillow 12.3.0. The
+Requalified on 2026-09-05 on Apple Silicon (macOS arm64), with MLX 0.32.2,
+Transformers 5.16.1, Torch 2.14.0, NumPy 2.5.2, and Pillow 12.3.0. The
 runtime remains weight-free; model files are local or Hub artifacts.
 
 The preset resolves to this published artifact, converted from the listed upstream revision:
@@ -12,8 +12,8 @@ The preset resolves to this published artifact, converted from the listed upstre
 
 **Reference implementation versus pinned reference.** The native EfficientNet module was written
 after Hugging Face Transformers 5.8.1
-(`transformers/models/efficientnet/modeling_efficientnet.py`), the same release pinned as the
-parity oracle.
+(`transformers/models/efficientnet/modeling_efficientnet.py`). That module is unchanged apart from
+lint through currently pinned 5.16.1, the parity oracle.
 
 ## Phase A: DocumentFigure identity
 

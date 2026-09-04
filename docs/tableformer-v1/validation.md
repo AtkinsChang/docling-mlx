@@ -1,7 +1,7 @@
 # TableFormerV1 validation
 
 The recorded qualification covers the frozen Accurate and Fast conversions on Apple Silicon with
-Docling 2.124.0. It does not establish general table quality or other-hardware behavior.
+Docling 2.126.0. It does not establish general table quality or other-hardware behavior.
 
 ## Frozen conversions
 
@@ -15,7 +15,7 @@ revision is `28bb5171682eed2a7d3c0a2f29f80f32dcccc18e`. Each profile contains
 **Reference implementation versus pinned reference.** The native modules were written after
 docling-ibm-models 3.14.0 (commit `313d0790d688aedefbfdf79092a3f1287150ed97`,
 `docling_ibm_models/tableformer`) and Torchvision v0.28.0 (`torchvision/models/resnet.py`). The
-referenced docling-ibm-models tableformer files changed in currently pinned 4.0.1
+referenced docling-ibm-models tableformer files changed in currently pinned 4.0.2
 (`matching_post_processor.py`, `tf_cell_matcher.py`, `tf_predictor.py`,
 `models/common/base_model.py`, and the three `table04_rs` model files); this implementation
 remains based on 3.14.0 and does not follow those newer changes. The referenced torchvision
@@ -58,7 +58,7 @@ runtime supports that layout as well as converted artifacts.
 ## Compatibility behavior
 
 The qualified stage preserves the exact OpenCV preprocessing documented in [README.md](README.md).
-Its legacy structural fallback matches `docling-ibm-models==4.0.1`: colspan or rowspan values above
+Its legacy structural fallback matches `docling-ibm-models==4.0.2`: colspan or rowspan values above
 20 become 1 during the source-compatible HTML round trip.
 
 ## Backend comparison

@@ -1,6 +1,6 @@
 # TableFormerV2 validation
 
-Requalified on 2026-09-02 on Apple Silicon against Docling 2.124.0. These results qualify this
+Requalified on 2026-09-05 on Apple Silicon against Docling 2.126.0. These results qualify this
 exact FP32 implementation and plugin boundary. They do not establish general table-recognition
 accuracy or performance on other hardware. The converted checkpoint is published at
 `atkinschang/TableFormerV2-MLX`, whose default revision is
@@ -11,8 +11,8 @@ accuracy or performance on other hardware. The converted checkpoint is published
 
 - Source checkpoint: `docling-project/TableFormerV2` revision
   `51559fad3946873e26a6f9b8e912f948e8745bef`.
-- Reference: `docling-ibm-models==4.0.1`, Torch 2.14.0, Torchvision 0.29.0,
-  Transformers 5.8.1, Pillow 12.3.0, and NumPy 2.5.2 on deterministic Torch CPU.
+- Reference: `docling-ibm-models==4.0.2`, Torch 2.14.0, Torchvision 0.29.0,
+  Transformers 5.16.1, Pillow 12.3.0, and NumPy 2.5.2 on deterministic Torch CPU.
 - Native runtime: MLX 0.32.2, FP32, NHWC, four decoder layers.
 - Converted weight SHA-256:
   `1bed301e719b583b71ca4c278499282c9701b63ddf7339ae6ef0093adf9477c8`.
@@ -21,7 +21,7 @@ accuracy or performance on other hardware. The converted checkpoint is published
 docling-ibm-models 3.14.0 (commit `313d0790d688aedefbfdf79092a3f1287150ed97`,
 `docling_ibm_models/tableformer_v2`) and Torchvision v0.28.0
 (`torchvision/models/efficientnet.py`). The scoped docling-ibm-models `tableformer_v2` source tree
-is unchanged in currently pinned 4.0.1, and this implementation remains validated against that
+is unchanged in currently pinned 4.0.2, and this implementation remains validated against that
 version. The referenced torchvision `efficientnet.py` is unchanged in currently pinned v0.29.0, and
 this implementation is validated against that version.
 
