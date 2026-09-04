@@ -6,10 +6,8 @@ project, not an official Docling or IBM project. It requires Python 3.13 or newe
 
 ## Install
 
-Until the first PyPI release, install from Git:
-
 ```bash
-uv pip install "docling-mlx[standard] @ git+https://github.com/AtkinsChang/docling-mlx"
+uv add "docling-mlx[standard]"
 ```
 
 MLX itself is installed only on macOS arm64; elsewhere the package imports but its engines cannot
