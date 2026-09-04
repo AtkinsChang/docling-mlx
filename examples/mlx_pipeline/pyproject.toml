@@ -1,0 +1,11 @@
+[project]
+name = "docling-mlx-pipeline-example"
+version = "0.1.0"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+  "docling-mlx",
+  "docling-slim[feat-ocr-mac,format-pdf]>=2.124",
+]
+
+[tool.uv.sources]
+docling-mlx = { path = "../..", editable = true }
