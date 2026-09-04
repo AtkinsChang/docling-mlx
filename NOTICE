@@ -1,0 +1,76 @@
+Docling MLX
+
+Project-authored code is Apache-2.0 licensed. Individual source files adapted from third-party
+code retain the notices and license stated below. Engines written after a reference
+implementation, rather than copied from it, credit that reference below. Adaptation and reference
+versions and commits are recorded in the component validation documents under docs/.
+
+USGS-derived test fixtures:
+  `tests/fixtures/tableformer_v2/basin_table_1.png`, `basin_table_2.png`, and
+  `basin_table_3.png`, plus the deterministic wrappers
+  `tests/fixtures/tableformer_v2/basin_table_1.pdf` and
+  `tests/fixtures/tableformer_v1/basin_table_1_text.pdf`, derive from U.S.
+  Geological Survey Open-File Report 1958-87, a U.S. Geological Survey publication in the public
+  domain in the United States; credit to the U.S. Geological Survey is retained per USGS guidance.
+  The report material is tracked as LicenseRef-USGS-Public-Domain (see
+  LICENSES/LicenseRef-USGS-Public-Domain.txt). The deterministic PDF wrappers
+  also contain Docling MLX contributors' Apache-2.0 material; see
+  LICENSES/Apache-2.0.txt. See the provenance records at
+  `tests/fixtures/tableformer_v1/UPSTREAM.md` and
+  `tests/fixtures/tableformer_v2/UPSTREAM.md`.
+  https://pubs.usgs.gov/of/1958/0087/
+
+Native RT-DETR-v2 architecture and grid sampling:
+  Adapted from mlx-vlm (mlx_vlm/models/rt_detr_v2).
+  Copyright © 2025 Prince Canuma.
+  Licensed under the MIT License; see LICENSES/MIT.txt.
+  https://github.com/Blaizzy/mlx-vlm
+
+Docling stage and parser behavior:
+  The Granite table OTSL parser and chart CSV/code parsers are locally adapted
+  from Docling. Copyright The Docling Contributors. Licensed under MIT;
+  see LICENSES/MIT.txt.
+  https://github.com/docling-project/docling
+
+Docling test fixture:
+  `tests/fixtures/document_figure/picture_classification.pdf` was copied from
+  Docling; the two reference PNGs were derived from its image XObjects. Copyright The
+  Docling Contributors. Licensed under MIT; see LICENSES/MIT.txt and
+  tests/fixtures/document_figure/UPSTREAM.md.
+  https://github.com/docling-project/docling
+
+Reference implementations:
+
+Native EfficientNet architecture:
+  The MLX modules were written after the Hugging Face Transformers efficientnet
+  reference implementation (Copyright 2023 Google Research, Inc. and The
+  HuggingFace Inc. team, Apache License 2.0). They follow the reference module
+  structure, parameter names, and forward-pass order.
+  https://github.com/huggingface/transformers
+
+Native D-FINE architecture:
+  The MLX modules were written after the Hugging Face Transformers d_fine and
+  hgnet_v2 reference implementations (Copyright 2018- The Hugging Face team,
+  Apache License 2.0). They follow the reference module structure, parameter
+  names, and forward-pass order.
+  https://github.com/huggingface/transformers
+
+Native TableFormer v1 architecture:
+  The Accurate and Fast presets are covered by this entry. The MLX modules were
+  written after the docling-ibm-models tableformer reference implementation
+  (Copyright (c) 2024 International Business Machines, MIT) and, for the
+  ResNet-18 feature stack, after Torchvision (Copyright (c) Soumith Chintala
+  2016, BSD 3-Clause). They follow the reference module structure, parameter
+  names, and forward-pass order.
+  https://github.com/docling-project/docling-ibm-models
+  https://github.com/pytorch/vision
+
+Native TableFormerV2 architecture:
+  TableFormerV2 has no published paper. The MLX modules were written after the
+  docling-ibm-models tableformer_v2 reference implementation (Copyright (c) 2024
+  International Business Machines, MIT) and, for the EfficientNetV2-S encoder,
+  after Torchvision (Copyright (c) Soumith Chintala 2016, BSD 3-Clause). They
+  follow the reference module structure, parameter names, and forward-pass
+  order.
+  https://github.com/docling-project/docling-ibm-models
+  https://github.com/pytorch/vision

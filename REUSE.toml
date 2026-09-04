@@ -1,0 +1,74 @@
+version = 1
+
+[[annotations]]
+path = [
+  ".github/**",
+  ".claude/CLAUDE.md",
+  ".envrc",
+  "flake.lock",
+  "flake.nix",
+  ".gitignore",
+  ".release-please-manifest.json",
+  "release-please-config.json",
+  ".rumdl.toml",
+  "AGENTS.md",
+  "committed.toml",
+  "CONTRIBUTING.md",
+  "DEVELOPMENT.md",
+  "NOTICE",
+  "README.md",
+  "REUSE.toml",
+  "docs/**",
+  "examples/**",
+  "pyproject.toml",
+  "src/docling_mlx/py.typed",
+  "taplo.toml",
+  "tests/**",
+  "treefmt.nix",
+  "uv.lock",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Docling MLX contributors"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = ["src/**", "tools/**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Docling MLX contributors"
+
+[[annotations]]
+path = "tests/fixtures/document_figure/**"
+precedence = "override"
+SPDX-FileCopyrightText = "The Docling Contributors"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = [
+  "tests/fixtures/tableformer_v2/basin_table_1.png",
+  "tests/fixtures/tableformer_v2/basin_table_2.png",
+  "tests/fixtures/tableformer_v2/basin_table_3.png",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "U.S. Geological Survey"
+SPDX-License-Identifier = "LicenseRef-USGS-Public-Domain"
+
+[[annotations]]
+path = [
+  "tests/fixtures/tableformer_v1/basin_table_1_text.pdf",
+  "tests/fixtures/tableformer_v2/basin_table_1.pdf",
+]
+precedence = "override"
+SPDX-FileCopyrightText = ["U.S. Geological Survey", "Docling MLX contributors"]
+SPDX-License-Identifier = "LicenseRef-USGS-Public-Domain AND Apache-2.0"
+
+[[annotations]]
+path = [
+  "src/docling_mlx/_models/detector_primitives.py",
+  "src/docling_mlx/_models/rt_detr_v2/config.py",
+  "src/docling_mlx/_models/rt_detr_v2/model.py",
+  "src/docling_mlx/_models/rt_detr_v2/transformer.py",
+  "src/docling_mlx/_models/rt_detr_v2/vision.py",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = ["2025 Prince Canuma", "Docling MLX contributors"]
+SPDX-License-Identifier = "MIT"
