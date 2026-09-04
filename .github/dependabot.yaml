@@ -16,3 +16,13 @@ updates:
       python-minor-patch:
         patterns: ["*"]
         update-types: ["minor", "patch"]
+    # The reference group pins the official Docling stack that the parity and
+    # release records were captured against.  Those pins move deliberately when
+    # the stack is re-validated, and bumping one alone cannot resolve (for
+    # example docling-ibm-models 4.0.1 requires transformers < 5.9).
+    ignore:
+      - dependency-name: docling-ibm-models
+      - dependency-name: transformers
+      - dependency-name: torch
+      - dependency-name: torchvision
+      - dependency-name: pypdfium2
