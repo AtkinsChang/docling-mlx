@@ -1,0 +1,11 @@
+[global]
+exclude = [".claude/CLAUDE.md", "CHANGELOG.md", "tests/fixtures/**"]
+extend-enable = ["MD060"]
+
+[MD013]
+line-length = 100
+code-blocks = false
+tables = false
+
+[MD060]
+style = "aligned"
