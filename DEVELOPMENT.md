@@ -238,14 +238,17 @@ Component-specific preprocessing, parser, and acceptance details belong in
 
 ## Releases
 
-`release.yaml` runs release-please on every push to `main`. It keeps a release pull request open that
-bumps `version` in `pyproject.toml` and the matching entry in `uv.lock`, and rewrites `CHANGELOG.md`
-from the conventional commits since the last release (`feat`, `fix`, `perf`, and `revert` are
-listed; other types are hidden). Merging that pull request creates the `v*` tag and the GitHub
-release, then publishes the tag to PyPI through `publish.yaml`, which is a reusable workflow with
-trusted publishing under the `pypi` environment. Below 1.0, breaking changes and features both bump
-the minor version and fixes bump the patch version. The first release is pinned by a `Release-As:
-0.1.0` footer in the initial history.
+`release.yaml` runs release-please on every push to `main`. It keeps a release pull request open
+that bumps `version` in `pyproject.toml` and the matching entry in `uv.lock`, and rewrites
+`CHANGELOG.md` from the conventional commits since the last release (`feat`, `fix`, `perf`, and
+`revert` are listed; other types are hidden). Merging that pull request creates the `v*` tag and the
+GitHub release, then dispatches `publish.yaml` at that tag, which builds the distribution and
+publishes it to PyPI with trusted publishing under the `pypi` environment. The publish workflow runs
+on its own rather than as a reusable workflow because PyPI verifies each attestation's build
+configuration against the trusted publisher's workflow file, and a reusable call would carry the
+caller's file instead. Below 1.0, breaking changes and features both bump the minor version and
+fixes bump the patch version. The first release is pinned by `initial-version` in the release-please
+configuration.
 
 To rehearse publishing, run `publish.yaml` manually from the Actions tab with `testpypi` selected;
 that uses the `testpypi` environment and TestPyPI's own trusted publisher, and skips files that
