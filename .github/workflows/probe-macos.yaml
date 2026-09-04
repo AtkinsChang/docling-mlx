@@ -1,0 +1,164 @@
+name: Probe macOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: GitHub-hosted macOS runner label
+        type: choice
+        default: macos-26
+        options:
+          - macos-26
+          - macos-15
+          - macos-latest
+      python:
+        description: Python version
+        type: string
+        default: "3.13"
+  # Temporary: workflow_dispatch only resolves files on the default branch, so
+  # pushes to the probe branch run it with the input defaults instead.
+  push:
+    branches:
+      - ci/macos-probe
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ${{ inputs.runner || 'macos-26' }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          python-version: ${{ inputs.python || '3.13' }}
+
+      - name: Describe the runner
+        run: |
+          set -euo pipefail
+          sw_vers
+          sysctl -n machdep.cpu.brand_string hw.ncpu hw.perflevel0.physicalcpu hw.memsize
+          df -h "$GITHUB_WORKSPACE" | tail -n 1
+          xcodebuild -version
+          xcrun -sdk macosx --find metal
+
+      - run: uv lock --check
+      # The mlx lane reads the installed mlx-vlm distribution, so the vlm extra is part of its footprint.
+      - run: uv sync --frozen --group dev --extra vlm
+
+      - name: Check Metal through MLX
+        run: |
+          uv run --no-sync python - <<'PY'
+          import time
+
+          import mlx.core as mx
+
+          print("mlx", mx.__version__, "device", mx.default_device(), "metal", mx.metal.is_available())
+          print(mx.metal.device_info())
+          a = mx.random.normal((2048, 2048))
+          mx.eval(a)
+          start = time.perf_counter()
+          mx.eval(a @ a)
+          print(f"matmul 2048x2048 first call {1e3 * (time.perf_counter() - start):.1f} ms")
+          start = time.perf_counter()
+          for _ in range(10):
+              mx.eval(a @ a)
+          print(f"matmul 2048x2048 x10 {1e3 * (time.perf_counter() - start):.1f} ms")
+          PY
+
+      - name: Default lane
+        run: uv run --no-sync pytest -rs --durations=10
+
+      - name: MLX lane without staged inputs
+        run: |
+          uv run --no-sync pytest -rs --durations=15 -m "mlx and not parity and not release" \
+            --ignore=tests/common/test_warmup.py \
+            --ignore=tests/document_figure/test_efficientnet_mlx.py \
+            --ignore=tests/document_figure/test_engine.py \
+            --ignore=tests/document_figure/test_stage.py \
+            --ignore=tests/layout_egret/test_loader_parity.py \
+            --ignore=tests/rt_detr_v2/test_grid_sample.py \
+            --ignore=tests/rt_detr_v2/test_primitives.py
+
+  lane:
+    needs: smoke
+    runs-on: ${{ inputs.runner || 'macos-26' }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          python-version: ${{ inputs.python || '3.13' }}
+
+      - run: uv sync --frozen --group dev --group reference --extra tableformer-v1 --extra vlm
+
+      - name: Restore staged inputs
+        uses: actions/cache@v6.1.0
+        with:
+          path: |
+            .artifacts
+            .sources
+          key: probe-inputs-${{ hashFiles('src/docling_mlx/presets.py', 'tools/document_figure/source.py', '.github/workflows/probe-macos.yaml') }}
+
+      - name: Stage pinned inputs
+        run: |
+          uv run --no-sync python - <<'PY'
+          import shutil
+          from pathlib import Path
+
+          from huggingface_hub import snapshot_download
+
+          from docling_mlx.presets import PRESETS
+          from tools.document_figure.source import SOURCE_FILES, SOURCE_REPO, SOURCE_REVISION
+
+          # Flat layout the mlx lane hardcodes under .artifacts/.
+          ARTIFACTS = {
+              "heron-r50": "layout_heron_default",
+              "egret-medium": "layout_egret_medium",
+              "egret-large": "layout_egret_large",
+              "egret-xlarge": "layout_egret_xlarge",
+              "document-figure-classifier": "document_figure_classifier_v2",
+              "tableformer-v1": "tableformer_v1_accurate",
+              "tableformer-v2": "tableformer_v2",
+          }
+          # Upstream Egret sources at the revisions recorded in docs/layout-egret/validation.md.
+          EGRET_SOURCES = {
+              "medium": ("docling-project/docling-layout-egret-medium", "77ede7cc7bed96d853c58f319734803d6ea2ea5c"),
+              "large": ("docling-project/docling-layout-egret-large", "fff417c78abd6bab338c87706c95a8d79dc68f1e"),
+              "xlarge": ("docling-project/docling-layout-egret-xlarge", "23857d16596e0106716b3162d132212d733769e7"),
+          }
+
+
+          def stage(repo_id: str, revision: str, target: Path, **kwargs: object) -> None:
+              if target.is_dir():
+                  print("cached", target)
+                  return
+              snapshot_download(repo_id, revision=revision, local_dir=target, **kwargs)
+              shutil.rmtree(target / ".cache", ignore_errors=True)
+              print("staged", target)
+
+
+          for name, preset in ARTIFACTS.items():
+              spec = PRESETS[preset]
+              stage(spec.repo_id, spec.revision, Path(".artifacts", name))
+          for name, (repo_id, revision) in EGRET_SOURCES.items():
+              stage(repo_id, revision, Path(".sources", f"egret-{name}"))
+          stage(
+              SOURCE_REPO,
+              SOURCE_REVISION,
+              Path(".sources", "document-figure"),
+              allow_patterns=list(SOURCE_FILES),
+          )
+          PY
+          du -sh .artifacts .sources
+
+      - name: MLX lane
+        env:
+          DOCLING_MLX_SOURCE: ${{ github.workspace }}/.sources/document-figure
+          DOCLING_MLX_EGRET_MEDIUM_SOURCE: ${{ github.workspace }}/.sources/egret-medium
+          DOCLING_MLX_EGRET_LARGE_SOURCE: ${{ github.workspace }}/.sources/egret-large
+          DOCLING_MLX_EGRET_XLARGE_SOURCE: ${{ github.workspace }}/.sources/egret-xlarge
+        run: uv run --no-sync pytest -rs --durations=25 -m "mlx and not parity and not release"
