@@ -1,8 +1,9 @@
 # Development
 
-This guide describes the current artifact and qualification workflow. Use Python 3.13 or newer on Apple
-Silicon macOS for MLX work, and use `uv run --no-sync` so an already provisioned environment is
-not rewritten.
+This guide describes the current artifact and qualification workflow. Use Python 3.13 or newer, and
+use `uv run --no-sync` so an already provisioned environment is not rewritten. Inference and every
+qualification lane require Apple Silicon macOS; see
+[Developing on Linux](#developing-on-linux) for what the portable checks cover elsewhere.
 
 Provision the development environment with the `dev` group; add `reference` for parity and
 converter lanes. Add `standard`, `vlm`, or `tableformer-v1` only where the selected lane requires
@@ -20,6 +21,24 @@ The optional Nix flake devshell provides the formatters, linters, `uv`, `gitleak
 treefmt + gitleaks; commit-msg: committed). The `uvx` commands in "Before every commit" are the
 canonical checks and are the checks CI runs. Nix style: group dotted keys (`foo = { a = …; b = …; }`,
 not `foo.a = …; foo.b = …;`).
+
+## Developing on Linux
+
+Editing, linting, and type checking work on Linux; qualifying inference does not. The `dev` group
+installs MLX's CPU backend there (`mlx[cpu]`, a `py3-none` wheel for glibc 2.35 or newer on x86_64
+and aarch64), so `ruff`, `mypy`, and the default pytest lane resolve the real MLX API. Without that
+backend `mlx` is absent, `ignore_missing_imports` degrades every MLX expression to `Any`, and mypy
+reports success without checking the engines or models at all. The backend is a development
+dependency only; the published package still depends on MLX solely on macOS arm64.
+
+The repository-wide checks under [Before every commit](#before-every-commit) and the portable
+commands under [Checks and lanes](#checks-and-lanes) all run on Linux.
+
+The `mlx`, `parity`, and `release` lanes stay on Apple Silicon. `require_apple_silicon` rejects
+non-Darwin hosts, and the detector grid-sample kernel is built with `mx.fast.metal_kernel`, which
+raises `RuntimeError: [metal_kernel] No Metal back-end` wherever Metal is missing. Selected lanes
+also need staged artifacts and, for parity, the `reference` group; on Linux those are missing
+setup, not a qualified result.
 
 ## Before every commit
 
