@@ -2,8 +2,15 @@ name: CI
 
 on:
   push:
+    branches:
+      - main
+      - ci/**
   pull_request:
+    branches:
+      - main
 
+# Keyed on the ref, so a new push cancels the previous run of the same branch or
+# pull request. A ci/** branch with an open pull request runs once per event.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -40,6 +47,54 @@ jobs:
           uv pip install --python .ci-wheel-venv/bin/python "$wheel"
           .ci-wheel-venv/bin/python -c "import docling_mlx, docling_mlx.plugins"
 
+  mac:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          python-version: "3.13"
+
+      # The mlx lane reads the installed mlx-vlm distribution, so the vlm extra
+      # is part of its footprint.
+      - run: uv sync --frozen --group dev --group reference --extra tableformer-v1 --extra vlm
+
+      - name: Default lane
+        run: uv run --no-sync pytest -rs
+
+      # Downloading the pinned inputs costs about as much as restoring them from
+      # an actions/cache entry, so the lane stages them fresh on every run.
+      - name: Stage the pinned lane inputs
+        run: uv run --no-sync python -m tools.stage_lane_inputs
+
+      - name: MLX lane
+        env:
+          DOCLING_MLX_SOURCE: ${{ github.workspace }}/.sources/document-figure
+          DOCLING_MLX_EGRET_MEDIUM_SOURCE: ${{ github.workspace }}/.sources/egret-medium
+          DOCLING_MLX_EGRET_LARGE_SOURCE: ${{ github.workspace }}/.sources/egret-large
+          DOCLING_MLX_EGRET_XLARGE_SOURCE: ${{ github.workspace }}/.sources/egret-xlarge
+        run: |
+          set -euo pipefail
+          log="$RUNNER_TEMP/mlx-lane.log"
+          uv run --no-sync pytest -rs -m "mlx and not parity and not release" | tee "$log"
+          if grep -Eq '[0-9]+ skipped' "$log"; then
+            echo "The mlx lane must finish with zero skips; a missing input is failed setup."
+            exit 1
+          fi
+
+      - run: uv build
+
+      - name: Install wheel and run import smoke
+        run: |
+          set -euo pipefail
+          wheel="$(find dist -maxdepth 1 -type f -name '*.whl' -print -quit)"
+          test -n "$wheel"
+          uv venv --python 3.13 .ci-wheel-venv
+          uv pip install --python .ci-wheel-venv/bin/python "$wheel"
+          .ci-wheel-venv/bin/python -c "import docling_mlx, docling_mlx.plugins"
+
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -59,6 +114,7 @@ jobs:
       - run: uvx ruff check .
       - run: uvx ruff format --check .
       - run: uvx --with 'reuse[charset-normalizer]' reuse lint
+      - run: npx --yes prettier@3.9.6 --check '.github/**/*.yaml'
 
       - name: Scan the full history for leaked secrets
         env:
