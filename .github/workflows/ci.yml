@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+
+      - run: uv lock --check
+      - run: uv sync --frozen --group dev
+      - run: uv run mypy
+      - run: uv run pytest -rs
+      - run: uv build
+
+      - name: Install wheel and run import smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          wheel="$(find dist -maxdepth 1 -type f -name '*.whl' -print -quit)"
+          test -n "$wheel"
+          uv venv --python "${{ matrix.python }}" .ci-wheel-venv
+          uv pip install --python .ci-wheel-venv/bin/python "$wheel"
+          .ci-wheel-venv/bin/python -c "import docling_mlx, docling_mlx.plugins"
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+
+      - run: uvx rumdl check .
+      - run: uvx typos .
+      - run: uvx taplo fmt --check .
+      - run: uvx taplo lint
+      - run: uvx --from actionlint-py actionlint
+      - run: uvx ruff check .
+      - run: uvx ruff format --check .
+      - run: uvx --with 'reuse[charset-normalizer]' reuse lint
+
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - if: github.event_name == 'pull_request'
+        uses: crate-ci/committed@v1.1.11
+        with:
+          args: HEAD~..HEAD^2 --no-merge-commit
