@@ -50,6 +50,9 @@ docling_mlx = "docling_mlx.plugins"
 
 [dependency-groups]
 dev = [
+  # MLX's Linux CPU backend so lint, mypy, and the default lane resolve the real
+  # MLX API off Apple Silicon.  Inference is still qualified only on Metal.
+  "mlx[cpu]>=0.32.2; sys_platform == 'linux'",
   "pytest>=9.1.1,<10",
   "ruff>=0.16.5,<1",
   "mypy>=2.3.1,<3",
