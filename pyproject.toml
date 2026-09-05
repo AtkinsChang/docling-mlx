@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "docling-mlx"
-version = "0.1.0"
+version = "0.1.1"
 description = "MLX model components and stage adapters for Docling"
 authors = [{ name = "Atkins Chang" }]
 readme = "README.md"
