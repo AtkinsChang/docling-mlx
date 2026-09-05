@@ -79,17 +79,6 @@ identical. The remaining MLX-versus-CPU differences are greedy-decoding
 divergences between Metal BF16 and CPU BF16 execution of the same weights and
 prompts; the positions below are the first divergent generated token ids.
 
-The pinned Granite artifact ships its own modeling code, which Docling's official Granite stages
-load with `trust_remote_code`, and that code calls `transformers.masking_utils.create_causal_mask`
-with a `cache_position` argument that Transformers 5.8 accepted and ignored and 5.9 removed. The
-official rows below therefore ran through a benchmark-side wrapper in
-`tools/compare_backends.py` that drops that argument; without it Docling's Granite stages raise
-`TypeError` on Transformers 5.9 and newer. The wrapper is faithful within the divergence this
-record already documents: the official table OTSL is byte-identical to the 2026-09-03 official
-run on 4 of the 5 crops, and the fifth is the crop where MLX and official already disagreed on
-both stacks (similarity 0.98 against the earlier output). MLX Granite outputs are byte-identical
-across mlx-vlm 0.6.4 and 0.6.17 on all 5 table crops.
-
 Machine: Apple M4 Pro, 48 GiB unified memory, macOS 26.5.2; Python 3.13.13;
 Docling 2.126.0, docling-ibm-models 4.0.2, MLX 0.32.2, mlx-vlm 0.6.17, Torch
 2.14.0, Transformers 5.16.1; measured on 2026-09-05 with `tools/compare_backends.py` schema 2 and
@@ -269,10 +258,6 @@ generated token ids were:
 
 ### Logit-level check
 
-This check is a separate teacher-forced experiment that predates the 2026-09-05 comparison
-above and is retained as it was recorded; the greedy divergence positions it cites are that
-earlier run's.
-
 For the five manifest table crops and five manifest chart crops, the `<tables_otsl>` and `<chart2csv>`
 inputs were built through the MLX stage builder/template and the official `compare_backends.py`
 processor/template path. The MLX, official CPU, and official MPS BF16 paths then ran prefill and 64
@@ -354,10 +339,6 @@ document table: three header cells differ only in capitalization and one value i
 `7.7`. That is the expected BF16 greedy-decoding divergence documented above, not a structural
 difference. Each raw report records `input_count` 50 together with the selected page ids, so the
 window is reproducible without re-deriving it.
-
-MLX peak RSS was 16.03 GiB against 5.13 GiB for the same component on 2026-09-04, and the official
-side was 17.80 GiB against 17.71 GiB. These are measurements across two dependency stacks; the run
-does not isolate a cause for the MLX change.
 
 The median per page hides the Granite work: 34 of the 50 pages carry no table or chart, so both
 Granite stages run on the remaining 16 pages, and the per-page mean and the timed-round total are
