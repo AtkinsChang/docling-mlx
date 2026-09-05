@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
 
+# Two merges minutes apart start two runs that both rewrite the release branch;
+# run them one after another so the second sees the first's lockfile commit.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
