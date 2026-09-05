@@ -835,9 +835,44 @@ def _mlx_granite_predictor(component: str) -> tuple[Predictor, dict[str, Any]]:
     return predict, metadata
 
 
+_GRANITE_MASK_SHIMMED = False
+
+
+def _shim_granite_causal_mask() -> None:
+    """Let the pinned Granite remote code run on Transformers 5.9 and newer.
+
+    The artifact's own modeling code passes ``cache_position`` to
+    ``transformers.masking_utils.create_causal_mask``. Transformers 5.8 accepted the
+    argument and ignored it; 5.9 removed the parameter, so the official Granite stages
+    fail before generating. Dropping the argument here leaves the mask computation
+    unchanged. This is a benchmark-side wrapper only; the official stages themselves
+    still fail on Transformers 5.9 and newer without it.
+    """
+
+    global _GRANITE_MASK_SHIMMED
+    if _GRANITE_MASK_SHIMMED:
+        return
+    import inspect
+
+    from transformers import masking_utils
+
+    original = masking_utils.create_causal_mask
+    if "cache_position" in inspect.signature(original).parameters:
+        _GRANITE_MASK_SHIMMED = True
+        return
+
+    def create_causal_mask(*args: Any, cache_position: Any = None, **kwargs: Any) -> Any:
+        del cache_position
+        return original(*args, **kwargs)
+
+    masking_utils.create_causal_mask = create_causal_mask
+    _GRANITE_MASK_SHIMMED = True
+
+
 def _official_granite_predictor(component: str, device: str) -> tuple[Predictor, dict[str, Any]]:
     import torch
 
+    _shim_granite_causal_mask()
     stage: Any | None = None
     processor: Any
     model: Any
@@ -1124,6 +1159,7 @@ def _mlx_granite_pipeline_stages() -> dict[str, Any]:
 def _official_granite_pipeline_stages() -> dict[str, Any]:
     """Docling's own Granite table structure and Granite Vision 4 chart extraction."""
 
+    _shim_granite_causal_mask()
     from docling.datamodel.chart_extraction_options import ChartExtractionModelOptions
     from docling.datamodel.pipeline_options import GraniteVisionTableStructureOptions
 
@@ -2223,7 +2259,7 @@ def run_all(args: argparse.Namespace) -> None:
     paired_inputs.extend(
         str(output_root / f"{component}.official-mps.json")
         for component in GRANITE_COMPONENTS
-        if (output_root / f"{component}.official-mps.json").is_file()
+        if _successful_result(output_root / f"{component}.official-mps.json")
     )
     if paired_inputs:
         summarize(argparse.Namespace(inputs=paired_inputs, output=args.summary))
