@@ -1,6 +1,6 @@
 # Granite Vision 4.1 adaptor validation
 
-Requalified on 2026-09-05 on Apple Silicon against Docling 2.126.0. The qualification covers the
+Requalified on 2026-09-05 on an Apple M4 Pro against Docling 2.126.0. The qualification covers the
 corrected engine and the table/chart adaptor boundary using the pinned official artifact. It does not
 claim Torch-to-MLX tensor parity, general document accuracy, or a speedup over another backend.
 

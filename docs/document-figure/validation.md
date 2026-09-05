@@ -1,6 +1,6 @@
 # EfficientNet validation
 
-Requalified on 2026-09-05 on Apple Silicon (macOS arm64), with MLX 0.32.2,
+Requalified on 2026-09-05 on an Apple M4 Pro (macOS 26.5.2 arm64), with MLX 0.32.2,
 Transformers 5.16.1, Torch 2.14.0, NumPy 2.5.2, and Pillow 12.3.0. The
 runtime remains weight-free; model files are local or Hub artifacts.
 

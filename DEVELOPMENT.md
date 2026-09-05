@@ -74,14 +74,18 @@ The default pytest configuration is `not (mlx or parity or release)` and is self
 explicit lanes are:
 
 ```bash
-uv run --no-sync pytest -q -rs -m "mlx and not parity and not release"
-uv run --no-sync pytest -q -rs -m parity
-uv run --no-sync pytest -q -rs -m release
+MLX_ENABLE_TF32=0 uv run --no-sync pytest -q -rs -m "mlx and not parity and not release"
+MLX_ENABLE_TF32=0 uv run --no-sync pytest -q -rs -m parity
+MLX_ENABLE_TF32=0 uv run --no-sync pytest -q -rs -m release
 ```
 
 Selected lanes require Apple Silicon, Metal, the reference group where applicable, and staged
 artifacts. Every selected lane must finish with zero skips; a missing artifact is a failed setup,
-not a qualified result. Source-dependent tests require these variables:
+not a qualified result. Run them with `MLX_ENABLE_TF32=0`: MLX 0.32 defaults the flag to 1, which
+lets FP32 matmul, convolution, and attention take a reduced-precision path on chips with matrix
+units (the Neural Accelerators of M5 and later on macOS 26.2 or newer). The flag is inert on M1
+through M4, and pinning it keeps the exactness records independent of the chip; each validation
+record names the chip it was produced on. Source-dependent tests require these variables:
 
 | Variable                                     | Required directory                                                                       |
 | -------------------------------------------- | ---------------------------------------------------------------------------------------- |
