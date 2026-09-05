@@ -257,10 +257,13 @@ TableFormerV2, and TableFormerV1 artifacts:
 
 ```bash
 uv run --no-sync python -m tools.release.qualify_concurrency \
-  --figure-artifact "$DOCLING_MLX_ARTIFACTS" \
+  --figure-artifact .artifacts/org--model/REV \
   --tableformer-artifact "$DOCLING_MLX_TABLEFORMER_V2_ARTIFACT" \
   --tableformer-v1-artifact "$DOCLING_MLX_TABLEFORMER_V1_ARTIFACT"
 ```
+
+All three flags take complete checkpoint directories; `--figure-artifact` does not resolve a cache
+root.
 
 Component-specific preprocessing, parser, and acceptance details belong in
 `docs/<component>/README.md` and `validation.md`.
