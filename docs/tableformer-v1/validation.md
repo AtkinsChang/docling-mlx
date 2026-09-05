@@ -1,6 +1,6 @@
 # TableFormerV1 validation
 
-The recorded qualification covers the frozen Accurate and Fast conversions on Apple Silicon with
+The recorded qualification covers the frozen Accurate and Fast conversions on an Apple M4 Pro with
 Docling 2.126.0. It does not establish general table quality or other-hardware behavior.
 
 ## Frozen conversions

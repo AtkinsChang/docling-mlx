@@ -1,6 +1,6 @@
 # TableFormerV2 validation
 
-Requalified on 2026-09-05 on Apple Silicon against Docling 2.126.0. These results qualify this
+Requalified on 2026-09-05 on an Apple M4 Pro against Docling 2.126.0. These results qualify this
 exact FP32 implementation and plugin boundary. They do not establish general table-recognition
 accuracy or performance on other hardware. The converted checkpoint is published at
 `atkinschang/TableFormerV2-MLX`, whose default revision is

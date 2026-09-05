@@ -74,6 +74,7 @@ jobs:
 
       - name: MLX lane
         env:
+          MLX_ENABLE_TF32: "0"
           DOCLING_MLX_SOURCE: ${{ github.workspace }}/.sources/document-figure
           DOCLING_MLX_EGRET_MEDIUM_SOURCE: ${{ github.workspace }}/.sources/egret-medium
           DOCLING_MLX_EGRET_LARGE_SOURCE: ${{ github.workspace }}/.sources/egret-large
