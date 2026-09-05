@@ -40,8 +40,9 @@ warm-up call, then three timed rounds over all 200 DPBench page images. MLX
 used Metal and the official Docling implementation used Torch MPS.
 
 Machine: Apple M4 Pro, 48 GiB unified memory, macOS 26.5.2; Python 3.13.13;
-Docling 2.124.0, docling-ibm-models 4.0.1, MLX 0.32.2, mlx-vlm 0.6.4, Torch
-2.14.0, Transformers 5.8.1; measured on 2026-09-03 with `tools/compare_backends.py` schema 2.
+Docling 2.126.0, docling-ibm-models 4.0.2, MLX 0.32.2, mlx-vlm 0.6.17, Torch
+2.14.0, Transformers 5.16.1; measured on 2026-09-05 with `tools/compare_backends.py` schema 2 and
+`MLX_ENABLE_TF32=0`, which is inert on M4 and recorded for completeness.
 
 Same-box label swaps are differently labelled matched detections for which MLX
 also emitted the official label at IoU >= 0.9; they are excluded from label
@@ -58,12 +59,12 @@ neither class changed a document output.
 
 | implementation | device    | warm ms/item (median) | first-call ms | peak RSS | label agreement at IoU >= 0.5, excluding same-box swaps | same-box label swaps | matched-box mean IoU | mean abs score delta | threshold-boundary unmatched MLX / official | other unmatched MLX / official |
 | -------------- | --------- | --------------------: | ------------: | -------: | ------------------------------------------------------: | -------------------: | -------------------: | -------------------: | ------------------------------------------- | ------------------------------ |
-| mlx            | mlx-metal |                42.230 |       355.632 | 1.79 GiB |                                                1.000000 |                    0 |             0.999929 |             0.000203 | 1 / 0                                       | 0 / 0                          |
-| official       | torch-mps |                70.686 |      3264.742 | 2.32 GiB |                                               reference |            reference |            reference |            reference | reference                                   | reference                      |
+| mlx            | mlx-metal |                42.052 |       153.357 | 1.80 GiB |                                                1.000000 |                    0 |             0.999929 |             0.000203 | 1 / 0                                       | 0 / 0                          |
+| official       | torch-mps |                69.296 |      2855.645 | 2.30 GiB |                                               reference |            reference |            reference |            reference | reference                                   | reference                      |
 
 ### Heron R101
 
 | implementation | device    | warm ms/item (median) | first-call ms | peak RSS | label agreement at IoU >= 0.5, excluding same-box swaps | same-box label swaps | matched-box mean IoU | mean abs score delta | threshold-boundary unmatched MLX / official | other unmatched MLX / official |
 | -------------- | --------- | --------------------: | ------------: | -------: | ------------------------------------------------------: | -------------------: | -------------------: | -------------------: | ------------------------------------------- | ------------------------------ |
-| mlx            | mlx-metal |                67.093 |       582.132 | 2.06 GiB |                                                1.000000 |                    4 |             0.999926 |             0.000217 | 1 / 3                                       | 0 / 0                          |
-| official       | torch-mps |                98.031 |      3657.979 | 2.34 GiB |                                               reference |            reference |            reference |            reference | reference                                   | reference                      |
+| mlx            | mlx-metal |                65.633 |       572.849 | 2.06 GiB |                                                1.000000 |                    4 |             0.999926 |             0.000217 | 1 / 3                                       | 0 / 0                          |
+| official       | torch-mps |                97.623 |      2859.845 | 2.31 GiB |                                               reference |            reference |            reference |            reference | reference                                   | reference                      |

@@ -103,12 +103,13 @@ warm-up call, then three timed rounds over all 63 DPBench ground-truth table
 crops. MLX used Metal and the official Docling implementation used Torch MPS.
 
 Machine: Apple M4 Pro, 48 GiB unified memory, macOS 26.5.2; Python 3.13.13;
-Docling 2.124.0, docling-ibm-models 4.0.1, MLX 0.32.2, mlx-vlm 0.6.4, Torch
-2.14.0, Transformers 5.8.1; measured on 2026-09-03 with `tools/compare_backends.py` schema 2.
+Docling 2.126.0, docling-ibm-models 4.0.2, MLX 0.32.2, mlx-vlm 0.6.17, Torch
+2.14.0, Transformers 5.16.1; measured on 2026-09-05 with `tools/compare_backends.py` schema 2 and
+`MLX_ENABLE_TF32=0`, which is inert on M4 and recorded for completeness.
 
 | mode     | implementation | device    | warm ms/item (median) | first-call ms | peak RSS | exact OTSL sequence | tree TEDS | cell-bbox mean IoU | unmatched MLX / official |
 | -------- | -------------- | --------- | --------------------: | ------------: | -------: | ------------------: | --------: | -----------------: | ------------------------ |
-| accurate | mlx            | mlx-metal |                98.970 |       388.194 | 0.64 GiB |            1.000000 |  1.000000 |           0.999997 | 0 / 0                    |
-| accurate | official       | torch-mps |               166.989 |      1795.021 | 0.99 GiB |           reference | reference |          reference | reference                |
-| fast     | mlx            | mlx-metal |                57.346 |       242.457 | 0.59 GiB |            1.000000 |  1.000000 |           0.999997 | 0 / 0                    |
-| fast     | official       | torch-mps |                79.396 |      1483.307 | 0.87 GiB |           reference | reference |          reference | reference                |
+| accurate | mlx            | mlx-metal |                81.127 |       285.937 | 0.64 GiB |            1.000000 |  1.000000 |           0.999997 | 0 / 0                    |
+| accurate | official       | torch-mps |               154.073 |      1758.952 | 0.99 GiB |           reference | reference |          reference | reference                |
+| fast     | mlx            | mlx-metal |                40.343 |       175.204 | 0.60 GiB |            1.000000 |  1.000000 |           0.999997 | 0 / 0                    |
+| fast     | official       | torch-mps |                78.283 |      1415.797 | 0.87 GiB |           reference | reference |          reference | reference                |
