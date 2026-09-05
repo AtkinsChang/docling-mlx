@@ -104,6 +104,33 @@ The previously qualified four-thread Torch CPU `basin_table_1` observations rema
 p50 and 299.99 ms stage p50. Against those pinned observations, the final MLX p50 values are 78.48
 ms and 80.23 ms. These are descriptive M4 Pro measurements, not a general speedup claim.
 
+## Async-eval double buffering
+
+The greedy loop submits the next decode step with `mx.async_eval` before reading the current token
+back to the host, following the mlx-lm `generate_step` pattern, and tests EOS on the token integers
+the host already holds instead of building a second `mx.all` graph. The EOS decision lands one step
+late, so one step past the stop condition is computed and discarded. The loop does not build that
+lookahead on the final permitted step, so a no-EOS result still contains 513 IDs including BOS.
+
+Measured on an Apple M4 Pro, 48 GiB, macOS 26.5.2, Python 3.13.13, MLX 0.32.2, Transformers 5.16.1,
+docling-ibm-models 4.0.2, with `MLX_ENABLE_TF32=0`, on 2026-09-05. One fresh process per side ran the
+engine boundary over the three qualified crops in one batch of three, with 5 warmups and 30 measured
+rounds; the values below divide each batch measurement by three.
+
+| Profile | IDs per crop | p50 before | p50 after | Mean before | Mean after | p50 improvement |
+| ------- | ------------ | ---------: | --------: | ----------: | ---------: | --------------: |
+| V2      | 56/513/227   |  298.37 ms | 266.52 ms |   298.43 ms |  265.65 ms |           10.7% |
+
+The 30-sample batch ranges do not overlap: 886–905 ms before against 783–807 ms after.
+
+Token IDs, OTSL tokens, and cell boxes were captured over the same three crops before and after, and
+the serialized captures are byte-identical. `tools/tableformer_v2/validate_parity.py`, which calls
+`TableFormerV2.generate` directly, was run from both sides against a fresh pinned Torch CPU capture:
+all 36 gates match field for field, and both sides reproduce the numeric-parity figures above
+exactly, worst observed encoder max `6.68e-6` against the `1e-4` cap, greedy-step logits max
+`6.58e-5` and final-logit max `1.30e-4` against the `1e-3` cap, and normalized bbox max `1.55e-6`
+against the `1e-4` cap.
+
 ## Repository qualification
 
 The three pytest lanes, Ruff, formatting, Mypy, root/reference locks, and wheel checks passed for

@@ -227,6 +227,8 @@ def test_generation_stops_on_eos_and_vectorizes_exact_cell_correspondence(
         np.array([4, 9], dtype=np.int32),
         np.array([3, 5], dtype=np.int32),
         np.array([3, 3], dtype=np.int32),
+        # Double buffering builds one step past the EOS it then discards.
+        np.array([3, 3], dtype=np.int32),
     )
     calls, captures = _install_generation_fakes(
         monkeypatch,

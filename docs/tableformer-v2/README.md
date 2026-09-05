@@ -40,11 +40,13 @@ TableFormerV2 Torchvision PIL resize path; Figure and Heron use their own Pillow
 The image is encoded once, with only the EfficientNetV2-S feature extractor compiled. Greedy
 generation starts at BOS and keeps a fixed-capacity projected K/V cache for each decoder layer.
 Encoder-memory K/V is projected once per layer, while each token step projects only the current
-Q/K/V and uses MLX fast scaled-dot-product attention. Generation stops at EOS or after 512 generated
-tokens, so a no-EOS result contains 513 IDs including BOS. The final full-sequence decoder states
-feed the bbox head once; every generated data-cell token must have exactly one normalized `xyxy`
-box. Its public result is pure data: token IDs, OTSL tokens, and crop-pixel boxes. The stage alone
-maps those values to Docling cells, coordinates, and text.
+Q/K/V and uses MLX fast scaled-dot-product attention. The loop is double buffered: every step
+submits the next step with `mx.async_eval` before reading the current token back to the host, so
+one step past the stop condition is computed and discarded. Generation stops at EOS or after 512
+generated tokens, so a no-EOS result contains 513 IDs including BOS. The final full-sequence
+decoder states feed the bbox head once; every generated data-cell token must have exactly one
+normalized `xyxy` box. Its public result is pure data: token IDs, OTSL tokens, and crop-pixel
+boxes. The stage alone maps those values to Docling cells, coordinates, and text.
 
 ## Convert the pinned checkpoint
 
