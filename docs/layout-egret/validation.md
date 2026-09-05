@@ -61,7 +61,7 @@ used Metal and the official Docling implementation used Torch MPS.
 Machine: Apple M4 Pro, 48 GiB unified memory, macOS 26.5.2; Python 3.13.13;
 Docling 2.126.0, docling-ibm-models 4.0.2, MLX 0.32.2, mlx-vlm 0.6.17, Torch
 2.14.0, Transformers 5.16.1; measured on 2026-09-05 with `tools/compare_backends.py` schema 2 and
-`MLX_ENABLE_TF32=0`, which is inert on M4 and recorded for completeness.
+`MLX_ENABLE_TF32=0`.
 
 Same-box label swaps are differently labelled matched detections for which MLX
 also emitted the official label at IoU >= 0.9; they are excluded from label
