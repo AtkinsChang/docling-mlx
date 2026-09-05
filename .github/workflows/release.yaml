@@ -14,6 +14,10 @@ jobs:
       contents: write
       pull-requests: write
       actions: write
+    env:
+      # release-please names its branch after the target branch and the component;
+      # its `pr` output is unset when it only updates an existing pull request.
+      RELEASE_BRANCH: release-please--branches--main--components--docling-mlx
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
@@ -30,7 +34,7 @@ jobs:
       - if: steps.release.outputs.prs_created == 'true'
         uses: actions/checkout@v7
         with:
-          ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          ref: ${{ env.RELEASE_BRANCH }}
 
       - if: steps.release.outputs.prs_created == 'true'
         uses: astral-sh/setup-uv@v10.0.1
@@ -41,7 +45,6 @@ jobs:
         name: Refresh the lockfile and run CI on the release branch
         env:
           GH_TOKEN: ${{ github.token }}
-          BRANCH: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
         run: |
           set -euo pipefail
           uv lock
@@ -49,9 +52,9 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git commit -am "chore: refresh the lockfile for the release"
-            git push origin "HEAD:$BRANCH"
+            git push origin "HEAD:$RELEASE_BRANCH"
           fi
-          gh workflow run ci.yaml --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"
+          gh workflow run ci.yaml --repo "$GITHUB_REPOSITORY" --ref "$RELEASE_BRANCH"
 
   publish:
     needs: release-please
