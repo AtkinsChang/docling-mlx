@@ -79,25 +79,37 @@ identical. The remaining MLX-versus-CPU differences are greedy-decoding
 divergences between Metal BF16 and CPU BF16 execution of the same weights and
 prompts; the positions below are the first divergent generated token ids.
 
+The pinned Granite artifact ships its own modeling code, which Docling's official Granite stages
+load with `trust_remote_code`, and that code calls `transformers.masking_utils.create_causal_mask`
+with a `cache_position` argument that Transformers 5.8 accepted and ignored and 5.9 removed. The
+official rows below therefore ran through a benchmark-side wrapper in
+`tools/compare_backends.py` that drops that argument; without it Docling's Granite stages raise
+`TypeError` on Transformers 5.9 and newer. The wrapper is faithful within the divergence this
+record already documents: the official table OTSL is byte-identical to the 2026-09-03 official
+run on 4 of the 5 crops, and the fifth is the crop where MLX and official already disagreed on
+both stacks (similarity 0.98 against the earlier output). MLX Granite outputs are byte-identical
+across mlx-vlm 0.6.4 and 0.6.17 on all 5 table crops.
+
 Machine: Apple M4 Pro, 48 GiB unified memory, macOS 26.5.2; Python 3.13.13;
-Docling 2.124.0, docling-ibm-models 4.0.1, MLX 0.32.2, mlx-vlm 0.6.4, Torch
-2.14.0, Transformers 5.8.1; measured on 2026-09-03 with `tools/compare_backends.py` schema 2.
+Docling 2.126.0, docling-ibm-models 4.0.2, MLX 0.32.2, mlx-vlm 0.6.17, Torch
+2.14.0, Transformers 5.16.1; measured on 2026-09-05 with `tools/compare_backends.py` schema 2 and
+`MLX_ENABLE_TF32=0`.
 
 ### Table (`<tables_otsl>`)
 
 | implementation | device    | warm ms/item (median) | first-call ms | peak RSS | generated tokens/request (median) | tokens/s | GT exact OTSL | GT tree TEDS | OTSL identity vs CPU |
 | -------------- | --------- | --------------------: | ------------: | -------: | --------------------------------: | -------: | ------------: | -----------: | -------------------: |
-| mlx            | mlx-metal |             15335.402 |     25151.553 | 8.12 GiB |                               430 |   28.286 |      0.000000 |     0.846189 |             0.800000 |
-| official       | torch-cpu |             70184.409 |    106280.387 | 9.14 GiB |                               430 |    6.103 |      0.000000 |     0.875051 |            reference |
-| official-mps   | torch-mps |             20561.413 |     28039.387 | 0.67 GiB |                               430 |   21.408 |      0.000000 |     0.870112 |             0.800000 |
+| mlx            | mlx-metal |             15374.099 |     24492.679 | 8.13 GiB |                               430 |   28.300 |      0.000000 |     0.846189 |             0.800000 |
+| official       | torch-cpu |             70907.970 |     77519.633 | 9.05 GiB |                               430 |    5.488 |      0.000000 |     0.859141 |            reference |
+| official-mps   | torch-mps |             19472.907 |     29148.690 | 8.12 GiB |                               430 |   21.998 |      0.000000 |     0.748714 |             0.800000 |
 
 ### Chart (`<chart2csv>`, `<chart2summary>`, `<chart2code>`)
 
 | implementation | device    | warm ms/item (median) | first-call ms | peak RSS | generated tokens/request (median) | tokens/s | CSV identity vs CPU | summary identity vs CPU | code identity vs CPU |
 | -------------- | --------- | --------------------: | ------------: | -------: | --------------------------------: | -------: | ------------------: | ----------------------: | -------------------: |
-| mlx            | mlx-metal |             18604.893 |     21632.888 | 8.12 GiB |                               166 |   28.201 |            0.800000 |                0.000000 |             0.600000 |
-| official       | torch-cpu |             88809.634 |    110155.799 | 8.83 GiB |                               166 |    5.407 |           reference |               reference |            reference |
-| official-mps   | torch-mps |             24646.147 |     35231.956 | 0.68 GiB |                               166 |   21.369 |            0.600000 |                0.200000 |             0.400000 |
+| mlx            | mlx-metal |             18656.438 |     21496.794 | 8.12 GiB |                               166 |   28.422 |            1.000000 |                0.200000 |             0.600000 |
+| official       | torch-cpu |             73454.518 |     74700.242 | 8.99 GiB |                               166 |    6.323 |           reference |               reference |            reference |
+| official-mps   | torch-mps |             23905.271 |     27857.360 | 8.12 GiB |                               166 |   18.962 |            0.800000 |                0.000000 |             0.600000 |
 
 Selected ground-truth chart crops, in classifier-confidence order:
 
@@ -119,7 +131,7 @@ First divergent generated token id (1-based): 9.
 --- official-cpu/doc_0592b0a1dff0c0b4a48b4504c035336bc9b30831fa2ac2ca8ef8b43a9b5df271_page_000001-table-00/<tables_otsl>
 +++ mlx/doc_0592b0a1dff0c0b4a48b4504c035336bc9b30831fa2ac2ca8ef8b43a9b5df271_page_000001-table-00/<tables_otsl>
 @@ -1 +1 @@
--[<otsl><ched>1. Changing Practices, Shifting Sites<fcel>7<nl><ched>2. Core and Periphery of Play<fcel>12<nl><ched>Part I: New Children, Different Toys<fcel>21<nl><fcel>3. The Child as Consumer<fcel>26<nl><fcel>4. Domesticating Play<fcel>30<nl><fcel>5. The Child in the City<fcel>35<nl><fcel>6. Toys as Containers, Mediators and Promoters<fcel>39<nl><ched>Part II: From Solitary to Networked Geographies of Play<fcel>45<nl><fcel>7. LEGO Toys: from Wooden Blocks to Plastic Bricks<fcel>50<nl><fcel>8. Brand Extension & Product Differentiation<fcel>58<nl><fcel>9. Bringing the Fans into the Company<fcel>62<nl><fcel>10. Many-to-Many Geographies of Play<fcel>66<nl><ched>Part III: Commercial Geographies of Play<fcel>71<nl><fcel>11. Toy Towns and Simulated Cities<fcel>73<nl><fcel>12. A 21st-century Dollhouse: The Sims<fcel>83<nl><fcel>13. Unwanted Play Practices in The Sims Online<fcel>94<nl><fcel>14. Commodified Geographies of Play<fcel>103<nl><ched>Part IV: Serious Geographies of Play<fcel>107<nl><fcel>15. Participation Tools<fcel>111<nl><fcel>16. Participation Processes<fcel>119<nl><fcel>17. Purposeful Play<fcel>122<nl><fcel>18. Serious Geographies of Play<fcel>124<nl><ched>Conclusion<fcel>127<nl><fcel>19. Changing Geographies of Play<fcel>127<nl><fcel>20. Making Do<fcel>132<nl><ched>Notes<fcel>137<nl><ched>Bibliography<fcel>139<nl><ched>Index<fcel>153<nl></otsl>]
+-[<otsl><ched>1. Changing Practices, Shifting Sites<ched>7<nl><ched>2. Core and Periphery of Play<ched>12<nl><ched>Part I: New Children, Different Toys<ched>21<nl><fcel>3. The Child as Consumer<fcel>26<nl><fcel>4. Domesticating Play<fcel>30<nl><fcel>5. The Child in the City<fcel>35<nl><fcel>6. Toys as Containers, Mediators and Promoters<fcel>39<nl><ched>Part II: From Solitary to Networked Geographies of Play<ched>45<nl><fcel>7. LEGO Toys: from Wooden Blocks to Plastic Bricks<fcel>50<nl><fcel>8. Brand Extension & Product Differentiation<fcel>58<nl><fcel>9. Bringing the Fans into the Company<fcel>62<nl><fcel>10. Many-to-Many Geographies of Play<fcel>66<nl><ched>Part III: Commercial Geographies of Play<ched>71<nl><fcel>11. Toy Towns and Simulated Cities<fcel>73<nl><fcel>12. A 21st-century Dollhouse: The Sims<fcel>83<nl><fcel>13. Unwanted Play Practices in The Sims Online<fcel>94<nl><fcel>14. Commodified Geographies of Play<fcel>103<nl><ched>Part IV: Serious Geographies of Play<ched>107<nl><fcel>15. Participation Tools<fcel>111<nl><fcel>16. Participation Processes<fcel>119<nl><fcel>17. Purposeful Play<fcel>122<nl><fcel>18. Serious Geographies of Play<fcel>124<nl><ched>Conclusion<ched>127<nl><fcel>19. Changing Geographies of Play<fcel>127<nl><fcel>20. Making Do<fcel>132<nl><ched>Notes<fcel>137<nl><ched>Bibliography<fcel>139<nl><ched>Index<fcel>153<nl></otsl>]
 +[<otsl><ched>1.<ched>Changing Practices, Shifting Sites<ched>7<nl><fcel>2.<fcel>Core and Periphery of Play<fcel>12<nl><fcel>Part I: New Children, Different Toys<lcel><fcel>21<nl><fcel>3.<fcel>The Child as Consumer<fcel>26<nl><fcel>4.<fcel>Domesticating Play<fcel>30<nl><fcel>5.<fcel>The Child in the City<fcel>35<nl><fcel>6.<fcel>Toys as Containers, Mediators and Promoters<fcel>39<nl><fcel>Part II: From Solitary to Networked Geographies of Play<lcel><fcel>45<nl><fcel>7.<fcel>LEGO Toys: from Wooden Blocks to Plastic Bricks<fcel>50<nl><fcel>8.<fcel>Brand Extension & Product Differentiation<fcel>58<nl><fcel>9.<fcel>Bringing the Fans into the Company<fcel>62<nl><fcel>10.<fcel>Many-to-Many Geographies of Play<fcel>66<nl><fcel>Part III: Commercial Geographies of Play<lcel><fcel>71<nl><fcel>11.<fcel>Toy Towns and Simulated Cities<fcel>73<nl><fcel>12.<fcel>A 21st-century Dollhouse: The Sims<fcel>83<nl><fcel>13.<fcel>Unwanted Play Practices in The Sims Online<fcel>94<nl><fcel>14.<fcel>Commodified Geographies of Play<fcel>103<nl><fcel>Part IV: Serious Geographies of Play<lcel><fcel>107<nl><fcel>15.<fcel>Participation Tools<fcel>111<nl><fcel>16.<fcel>Participation Processes<fcel>119<nl><fcel>17.<fcel>Purposeful Play<fcel>122<nl><fcel>18.<fcel>Serious Geographies of Play<fcel>124<nl><fcel>Conclusion<lcel><fcel>127<nl><fcel>19.<fcel>Changing Geographies of Play<fcel>127<nl><fcel>20.<fcel>Making Do<fcel>132<nl><fcel>Notes<lcel><fcel>137<nl><fcel>Bibliography<lcel><fcel>139<nl><fcel>Index<lcel><fcel>153<nl></otsl>]
 ```
 
@@ -128,66 +140,17 @@ First divergent generated token id (1-based): 40.
 --- official-cpu/doc_20c3068a37794e1e2db40c6227d57172ad308c8a81815c4c08970219586ef4ee_page_000001-picture-00/<chart2summary>
 +++ mlx/doc_20c3068a37794e1e2db40c6227d57172ad308c8a81815c4c08970219586ef4ee_page_000001-picture-00/<chart2summary>
 @@ -1,7 +1,7 @@
--The provided chart image is a 3D pie chart that visually represents the distribution of three categories: Cutting raw woods, Fabrication, and Transportation. The chart does not have a specified title or axis labels, but it uses a legend to differentiate between the categories. The legend indicates that Cutting raw woods is represented in blue, Fabrication in orange, and Transportation in gray.
+-The provided chart image is a 3D pie chart that visually represents the distribution of three categories: Cutting raw woods, Fabrication, and Transportation. The chart does not have a specified title or axis labels, but it effectively uses color coding to differentiate between the categories. Cutting raw woods is depicted in blue, Fabrication in orange, and Transportation in gray.
 +The provided chart image is a 3D pie chart that visually represents the distribution of three categories: Cutting raw woods, Fabrication, and Transportation. The chart does not have a specified title or labels for the axes, as it is a pie chart, which typically does not require axis labels.
-
--The pie chart is divided into three segments, each corresponding to one of the categories. The largest segment, colored in blue, represents Cutting raw woods and occupies approximately 60% of the chart. This indicates that Cutting raw woods is the most significant category in the data set. The second-largest segment, colored in orange, represents Fabrication and takes up about 30% of the chart. The smallest segment, colored in gray, represents Transportation and accounts for roughly 10% of the chart.
+ 
+-The pie chart is divided into three segments, each corresponding to one of the categories. The largest segment, colored blue, represents Cutting raw woods, which occupies approximately 60% of the chart. This indicates that Cutting raw woods is the most significant category in the data set. The second-largest segment, colored orange, represents Fabrication, which accounts for about 30% of the chart. The smallest segment, colored gray, represents Transportation, making up roughly 10% of the chart.
 +The pie chart is divided into three segments, each corresponding to one of the categories mentioned. The largest segment, colored in blue, represents "Cutting raw woods" and occupies approximately 60% of the chart. This indicates that the majority of the data falls under this category. The second-largest segment, colored in orange, represents "Fabrication" and makes up about 30% of the chart. The smallest segment, colored in gray, represents "Transportation" and accounts for roughly 10% of the chart.
-
--The chart does not include specific data labels or annotations, but the relative sizes of the segments provide a clear visual comparison of the proportions of each category. The use of a 3D effect gives the pie chart a more dynamic appearance, but it does not affect the accuracy of the data representation.
+ 
+-The chart includes a legend that clearly identifies the colors associated with each category, aiding in the interpretation of the data. The 3D effect of the pie chart adds depth to the visualization, making it more engaging and easier to understand the proportions of each category.
 +The chart includes a legend that clearly identifies each category with its corresponding color: blue for Cutting raw woods, orange for Fabrication, and gray for Transportation. The use of different colors helps to distinguish between the categories and makes the chart easy to interpret.
-
--In summary, the 3D pie chart effectively illustrates the distribution of Cutting raw woods, Fabrication, and Transportation, with Cutting raw woods being the dominant category, followed by Fabrication, and then Transportation. The chart's visual elements, including the colors and the 3D effect, enhance the understanding of the data proportions.
+ 
+-In summary, the 3D pie chart illustrates that Cutting raw woods is the dominant category, followed by Fabrication, with Transportation being the smallest. The use of distinct colors and a 3D effect enhances the clarity and visual appeal of the chart, providing a clear and concise representation of the data distribution.
 +In summary, the 3D pie chart effectively illustrates the distribution of the three categories, with "Cutting raw woods" being the most significant, followed by "Fabrication," and "Transportation" being the least significant. The chart's design and color coding enhance its readability and provide a clear visual representation of the data.
-```
-
-```diff
-First divergent generated token id (1-based): 51.
---- official-cpu/doc_a012af9597cad209a43dc6a6a4543994e857a56fac9fdd3eed92a5e1b93f79b2_page_000001-picture-00/<chart2summary>
-+++ mlx/doc_a012af9597cad209a43dc6a6a4543994e857a56fac9fdd3eed92a5e1b93f79b2_page_000001-picture-00/<chart2summary>
-@@ -1,26 +1,21 @@
- The chart is a bar graph that compares the number of individuals by gender (Male and Female) across different years (2016 to 2020, with 2020 data only up to September). Here's a detailed summary:
-
--- **2016 (Blue bars):**
--  - Males: 187
--  - Females: 374
-+- **Male Data:**
-+  - **2016:** 187 individuals
-+  - **2017:** 128 individuals
-+  - **2018:** 102 individuals
-+  - **2019:** 102 individuals
-+  - **2020 (to September):** 22 individuals
-
--- **2017 (Red bars):**
--  - Males: 128
--  - Females: 331
--
--- **2018 (Yellow bars):**
--  - Males: 102
--  - Females: 319
--
--- **2019 (Green bars):**
--  - Males: 102
--  - Females: 335
--
--- **2020 (to September, Light Blue bars):**
--  - Males: 22
--  - Females: 55
-+- **Female Data:**
-+  - **2016:** 374 individuals
-+  - **2017:** 331 individuals
-+  - **2018:** 319 individuals
-+  - **2019:** 335 individuals
-+  - **2020 (to September):** 55 individuals
-
- Key observations:
--- The number of females consistently exceeds the number of males each year.
--- There is a noticeable decline in the number of individuals for both genders from 2016 to 2020.
--- The most significant drop in numbers for both genders occurred between 2019 and 2020.
-+- The number of males decreased significantly from 2016 to 2020.
-+- The number of females also decreased from 2016 to 2020, but the decline was less steep compared to males.
-+- The highest number of individuals in both genders was recorded in 2016.
-+- The data for 2020 (up to September) shows a sharp decline in both male and female numbers.
 ```
 
 ```diff
@@ -195,80 +158,71 @@ First divergent generated token id (1-based): 70.
 --- official-cpu/doc_aa00d01e639cf879439b5f4c9313f1647bba27070a833569dee0b3eeb3476731_page_000001-picture-00/<chart2code>
 +++ mlx/doc_aa00d01e639cf879439b5f4c9313f1647bba27070a833569dee0b3eeb3476731_page_000001-picture-00/<chart2code>
 @@ -2,7 +2,7 @@
-
+ 
  labels = 'Unknown', 'Decreasing', 'Same', 'Increasing', 'Gone'
  sizes = [45, 33, 12, 5, 5]
--colors = ['#3A5A40', '#A3C3B2', '#8F9A6B', '#B58A5A', '#D3D3D3']
+-colors = ['#3A5A40', '#A3B1B8', '#8F9A6B', '#B58A5A', '#D8D8D8']
 +colors = ['#4a5d23', '#a3b1a4', '#8f9c6a', '#c49c44', '#d7b5a6']
  explode = (0.1, 0, 0, 0, 0)
-
+ 
  plt.pie(sizes, explode=explode, labels=labels, colors=colors,
 ```
 
 ```diff
-First divergent generated token id (1-based): 178.
+First divergent generated token id (1-based): 139.
 --- official-cpu/doc_aa00d01e639cf879439b5f4c9313f1647bba27070a833569dee0b3eeb3476731_page_000001-picture-00/<chart2summary>
 +++ mlx/doc_aa00d01e639cf879439b5f4c9313f1647bba27070a833569dee0b3eeb3476731_page_000001-picture-00/<chart2summary>
-@@ -2,6 +2,6 @@
-
- The largest segment, colored in dark green, represents the "Unknown" category, which constitutes 45% of the total. This is the most significant portion of the chart, indicating that nearly half of the data falls into this category. The next largest segment, shown in light green, is labeled "Decreasing" and accounts for 33% of the data. This is followed by a segment in brown, labeled "Same," which makes up 12% of the chart. The two smallest segments are "Increasing" and "Gone," each represented in different shades and both comprising 5% of the total.
-
--The pie chart uses a color scheme to differentiate between the categories, with each segment clearly labeled with its respective percentage. The total of all categories sums up to 100%, providing a comprehensive view of the data distribution.
+@@ -1,9 +1,7 @@
+ The provided chart image is a pie chart that illustrates the distribution of various categories, although a specific title is not given. The chart is divided into five distinct segments, each representing a different category with corresponding percentages.
+ 
+-The largest segment, colored in dark green, represents the "Unknown" category, which constitutes 45% of the total. This is the most significant portion of the chart, indicating that nearly half of the data falls into this category. The next largest segment, shown in light green, is labeled "Decreasing" and accounts for 33% of the data. This is followed by a segment in brown, labeled "Same," which makes up 12% of the total.
++The largest segment, colored in dark green, represents the "Unknown" category, which constitutes 45% of the total. This is the most significant portion of the chart, indicating that nearly half of the data falls into this category. The next largest segment, shown in light green, is labeled "Decreasing" and accounts for 33% of the data. This is followed by a segment in brown, labeled "Same," which makes up 12% of the chart. The two smallest segments are "Increasing" and "Gone," each represented in different shades and both comprising 5% of the total.
+ 
+-The two smallest segments are "Increasing" and "Gone," each representing 5% of the data. The "Increasing" segment is colored in a light brown shade, while the "Gone" segment is in a light gray color. These two categories are the least represented in the chart, each contributing equally to the total.
 +The pie chart uses a color scheme that includes dark green, light green, brown, and two shades of gray to differentiate between the categories. The percentages are clearly labeled on each segment, making it easy to understand the distribution at a glance. The total of all categories sums up to 100%, ensuring that the chart accurately represents the entire dataset.
-
--In summary, the pie chart effectively visualizes the proportions of different categories, with "Unknown" being the most prevalent at 45%, followed by "Decreasing" at 33%, "Same" at 12%, and both "Increasing" and "Gone" at 5% each. The use of distinct colors and clear labeling enhances the readability and understanding of the data presented.
+ 
+-The pie chart uses different colors to distinguish between the categories, making it easy to visually compare their proportions. The percentages are clearly labeled on each segment, providing precise information about the distribution of the data.
+-
+-In summary, the pie chart effectively shows that the "Unknown" category is the most prevalent, followed by "Decreasing" and "Same," with "Increasing" and "Gone" being the least common categories. The total of all categories sums up to 100%, ensuring that the chart provides a complete representation of the data.
 +In summary, this pie chart effectively visualizes the distribution of five categories, with "Unknown" being the most prevalent at 45%, followed by "Decreasing" at 33%, "Same" at 12%, and both "Increasing" and "Gone" at 5% each. The use of distinct colors and clear labeling enhances the readability and comprehension of the data presented.
 ```
 
 ```diff
-First divergent generated token id (1-based): 68.
+First divergent generated token id (1-based): 217.
 --- official-cpu/doc_aa00d01e639cf879439b5f4c9313f1647bba27070a833569dee0b3eeb3476731_page_000001-picture-01/<chart2summary>
 +++ mlx/doc_aa00d01e639cf879439b5f4c9313f1647bba27070a833569dee0b3eeb3476731_page_000001-picture-01/<chart2summary>
-@@ -1,7 +1,7 @@
- The provided chart image is a pie chart that visually represents the distribution of various categories related to concern levels. The chart does not have a specified title, but it clearly illustrates the proportion of each category within the whole.
-
--The pie chart is divided into six distinct segments, each representing a different category of concern. The largest segment, colored in light gray, represents "Least concern" and constitutes 69% of the total. This is the most significant portion of the chart, indicating that the majority of the data falls into this category. The next largest segment, colored in dark green, is "Data deficient," which accounts for 15% of the total. Following this, the "Vulnerable" category, shown in a lighter shade of green, makes up 9% of the chart. The "Near threatened" category, depicted in a very light gray, represents 5% of the total. The smallest segments, each constituting 1% of the chart, are "Critically endangered" and "Endangered," both colored in shades of brown.
-+The pie chart is divided into six distinct segments, each representing a different category of concern. The largest segment, which occupies 69% of the chart, is labeled "Least concern" and is depicted in a light gray color. This indicates that the majority of the data falls into this category. The next largest segment, colored in a darker shade of gray, represents "Data deficient" and accounts for 15% of the total. Following this, the "Vulnerable" category, shown in a medium gray color, makes up 9% of the chart. The "Near threatened" category, in a lighter gray shade, constitutes 5% of the data. The smallest segments, each representing 1% of the chart, are "Critically endangered" and "Endangered," both depicted in the darkest shades of gray.
-
--The chart uses different shades of green and gray to distinguish between the categories, with the "Least concern" category being the most prominent due to its size. The percentages for each category are clearly labeled within their respective segments, making it easy to understand the distribution at a glance.
+@@ -2,6 +2,6 @@
+ 
+ The pie chart is divided into six distinct segments, each representing a different category of concern. The largest segment, which occupies 69% of the chart, is labeled "Least concern" and is depicted in a light gray color. This indicates that the majority of the data falls into this category. The next largest segment, colored in a darker shade of gray, represents "Data deficient" and accounts for 15% of the total. Following this, the "Vulnerable" category, shown in a medium gray color, makes up 9% of the chart. The "Near threatened" category, in a lighter gray shade, constitutes 5% of the data. The smallest segments, each representing 1% of the chart, are "Critically endangered" and "Endangered," both depicted in the darkest shades of gray.
+ 
+-The chart uses a color gradient from light to dark gray to differentiate between the categories, with the lightest shade representing the "Least concern" category and the darkest shades representing the "Critically endangered" and "Endangered" categories. The percentages for each category are clearly labeled within their respective segments, making it easy to understand the distribution at a glance.
 +The chart does not include any legends or additional annotations, and the labels for each category are directly placed on the corresponding segments. The color scheme is consistent, with varying shades of gray used to differentiate between the categories. The total percentage of all categories sums up to 100%, ensuring that the chart accurately represents the entire dataset.
-
--In summary, the pie chart effectively communicates that the majority of the data falls under the "Least concern" category, with smaller proportions allocated to "Data deficient," "Vulnerable," "Near threatened," and minimal allocations to "Critically endangered" and "Endangered." The use of color and clear labeling enhances the readability and comprehension of the data presented.
+ 
+-In summary, the pie chart effectively communicates that the majority of the data falls under the "Least concern" category, with smaller proportions in the "Data deficient," "Vulnerable," "Near threatened," and "Critically endangered" categories. The use of a color gradient and clear labeling enhances the readability and interpretability of the chart.
 +In summary, this pie chart effectively communicates the distribution of concern levels, with the majority of the data falling into the "Least concern" category, followed by "Data deficient" and "Vulnerable," and the smallest proportions in the "Critically endangered" and "Endangered" categories.
 ```
 
 ```diff
-First divergent generated token id (1-based): 29.
+First divergent generated token id (1-based): 28.
 --- official-cpu/doc_f0ab823f66709631e6226a937a8d68b52bde1e7ff6ef28086563c0646867c769_page_000001-picture-00/<chart2code>
 +++ mlx/doc_f0ab823f66709631e6226a937a8d68b52bde1e7ff6ef28086563c0646867c769_page_000001-picture-00/<chart2code>
-@@ -1,23 +1,15 @@
+@@ -1,14 +1,15 @@
  <code><loc_0><loc_0><loc_500><loc_500>import matplotlib.pyplot as plt
-
--data = {
--    "Domestic logs and wood chips": 55,
--    "Import pellets, chips": 20,
--    "Domestic wood pellets": 15,
--    "PKS": 10,
--    "Construction wood waste": 5,
--    "Waste materials": 5,
--    "Others": 0
--}
+-import numpy as np
+ 
+-labels = ['Domestic logs\nand wood\nchips', 'Domestic wood pellets', 'Import pellets,\nchips', 'PKS', 'Construction\nwood waste', 'Waste\nmaterials', 'Others']
 +labels = 'Domestic logs\nand wood\nchips', 'Domestic wood pellets', 'Import pellets,\nchips', 'PKS', 'Construction\nwood waste', 'Waste\nmaterials', 'Others'
-+sizes = [55, 20, 20, 15, 5, 5, 5]
-+colors = ['#7fc97f', '#beaed4', '#fdc086', '#ffff99', '#386cb0', '#fdc086', '#ffff99']
+ sizes = [55, 20, 20, 15, 5, 5, 5]
+ colors = ['#7fc97f', '#beaed4', '#fdc086', '#ffff99', '#386cb0', '#fdc086', '#ffff99']
 +explode = (0.1, 0, 0, 0, 0, 0, 0)
-
--labels = data.keys()
--sizes = data.values()
--colors = ['#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92f', '#e5c494']
+ 
+-fig1, ax1 = plt.subplots()
+-ax1.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90, counterclock=False)
+-ax1.axis('equal')
 +plt.pie(sizes, explode=explode, labels=labels, colors=colors, autopct='%1.1f%%',
 +        shadow=False, startangle=90, textprops={'fontsize': 10})
-
--fig, ax = plt.subplots()
--ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90, counterclock=False)
--ax.axis('equal')
--
--plt.title('Distribution of Wood Waste Sources')
+ 
+-plt.title('Wood fuel sources in Finland in 2018')
 -plt.show()
 +plt.axis('equal')
 +plt.title('Wood fuel sources in Finland in 2018', fontsize=14, pad=20)
@@ -278,67 +232,46 @@ First divergent generated token id (1-based): 29.
 ```
 
 ```diff
-First divergent generated token id (1-based): 36.
---- official-cpu/doc_f0ab823f66709631e6226a937a8d68b52bde1e7ff6ef28086563c0646867c769_page_000001-picture-00/<chart2csv>
-+++ mlx/doc_f0ab823f66709631e6226a937a8d68b52bde1e7ff6ef28086563c0646867c769_page_000001-picture-00/<chart2csv>
-@@ -4,7 +4,7 @@
- Import pellets, chips,20
- Domestic wood pellets,15
- PKS,10
-+Construction wood waste,5
- Waste materials,5
--Construction wood waste,5
- Others,5
- ```
-
-```diff
-First divergent generated token id (1-based): 38.
+First divergent generated token id (1-based): 211.
 --- official-cpu/doc_f0ab823f66709631e6226a937a8d68b52bde1e7ff6ef28086563c0646867c769_page_000001-picture-00/<chart2summary>
 +++ mlx/doc_f0ab823f66709631e6226a937a8d68b52bde1e7ff6ef28086563c0646867c769_page_000001-picture-00/<chart2summary>
-@@ -1,17 +1,9 @@
--The provided chart image is a pie chart that illustrates the distribution of various wood-based materials. The chart does not have a specified title, but it clearly represents the proportions of different categories of wood materials.
-+The provided chart image is a pie chart that illustrates the distribution of various wood-based materials. The chart does not have a specified title, but it clearly represents the proportions of different categories within the wood-based materials sector.
-
--The pie chart is divided into six distinct segments, each representing a different category of wood materials. The largest segment, colored in green, represents "Domestic logs and wood chips," which constitutes the majority of the chart at 55%. This indicates that more than half of the wood-based materials are domestic logs and wood chips.
-+The pie chart is divided into six distinct segments, each representing a different category of wood-based materials. The largest segment, colored in green, represents "Domestic logs and wood chips," which constitutes the majority of the distribution at 50%. This is followed by a yellow segment labeled "Import pellets, chips," which accounts for 20% of the total. The third-largest segment, colored in orange, is "Domestic wood pellets," making up 15% of the distribution.
-
--The second-largest segment, colored in orange, represents "Import pellets, chips," which makes up 20% of the chart. This shows that a significant portion of the wood-based materials are imported pellets and chips.
+@@ -2,8 +2,8 @@
+ 
+ The pie chart is divided into six distinct segments, each representing a different category of wood-based materials. The largest segment, colored in green, represents "Domestic logs and wood chips," which constitutes the majority of the distribution at 50%. This is followed by a yellow segment labeled "Import pellets, chips," which accounts for 20% of the total. The third-largest segment, colored in orange, is "Domestic wood pellets," making up 15% of the distribution.
+ 
+-The remaining categories are smaller in comparison. The "PKS" category, shown in a light brown color, represents 10% of the total. The "Construction wood waste" category, depicted in a light gray color, accounts for 5%. The smallest segment, colored in blue, is labeled "Waste materials" and "Others," together making up 10% of the distribution.
 +The remaining categories are smaller in comparison. The "PKS" category, shown in a light brown color, represents 10% of the total. The "Construction wood waste" category, depicted in a light gray color, accounts for 5%. The smallest segment, colored in blue, is labeled "Others" and constitutes 0.5% of the distribution.
-
--The third segment, colored in brown, represents "Domestic wood pellets," accounting for 15% of the chart. This indicates that domestic wood pellets are also a notable component of the wood-based materials.
+ 
+-The chart uses different colors to distinguish between the categories, making it easy to visually compare their proportions. The labels for each category are clearly marked, and the percentages are visually represented by the size of each segment. The total distribution across all categories sums up to 100%.
 +The chart uses different colors to distinguish between the categories, making it easy to visually compare their proportions. The labels for each category are clearly marked, and the percentages are indicated next to each segment, providing a quick and clear understanding of the distribution.
-
--The fourth segment, colored in gray, represents "PKS" (Plywood, Kraft, and Sawn), which constitutes 10% of the chart. This shows that PKS materials are a smaller but still significant part of the distribution.
--
--The fifth segment, colored in light blue, represents "Waste materials," which makes up 5% of the chart. This indicates that waste materials are a minor component of the wood-based materials.
--
--The smallest segment, colored in dark blue, represents "Others," which accounts for 5% of the chart. This shows that other miscellaneous materials make up a small portion of the distribution.
--
--The chart does not include any legends or additional annotations, and the labels for each segment are clearly marked with their respective categories. The total of all segments adds up to 100%, providing a comprehensive view of the distribution of wood-based materials.
--
--In summary, the pie chart effectively illustrates the dominance of domestic logs and wood chips in the wood-based materials, followed by import pellets and chips, domestic wood pellets, PKS, waste materials, and others. The use of different colors for each segment helps to distinguish between the various categories, making the chart easy to understand and interpret.
+ 
+-In summary, the pie chart effectively communicates the dominance of "Domestic logs and wood chips" in the wood-based materials sector, with "Import pellets, chips" and "Domestic wood pellets" also playing significant roles. The smaller categories, including "PKS," "Construction wood waste," and "Waste materials" and "Others," contribute less to the overall distribution.
 +In summary, the pie chart effectively communicates that "Domestic logs and wood chips" are the most significant component of the wood-based materials, followed by "Import pellets, chips" and "Domestic wood pellets." The categories of "PKS," "Construction wood waste," and "Others" represent smaller proportions of the total distribution.
 ```
 
 ### Official MPS versus official CPU differences
 
 The direct MPS bypass differed from CPU on table
-`doc_934fbf534914863f6431eef38f5bf66fa91afd439ddf20fb1af0cf3225159ac1_page_000001-table-00`
-at generated token id 54. Its chart first divergent generated token ids were:
+`doc_0592b0a1dff0c0b4a48b4504c035336bc9b30831fa2ac2ca8ef8b43a9b5df271_page_000001-table-00`
+at generated token id 9, the same crop and position where MLX diverges. Its chart first divergent
+generated token ids were:
 
 | crop                                                                                          | prompt            | position |
 | --------------------------------------------------------------------------------------------- | ----------------- | -------: |
-| `doc_20c3068a37794e1e2db40c6227d57172ad308c8a81815c4c08970219586ef4ee_page_000001-picture-00` | `<chart2csv>`     |       14 |
 | `doc_20c3068a37794e1e2db40c6227d57172ad308c8a81815c4c08970219586ef4ee_page_000001-picture-00` | `<chart2summary>` |       40 |
-| `doc_aa00d01e639cf879439b5f4c9313f1647bba27070a833569dee0b3eeb3476731_page_000001-picture-00` | `<chart2code>`    |       79 |
-| `doc_aa00d01e639cf879439b5f4c9313f1647bba27070a833569dee0b3eeb3476731_page_000001-picture-00` | `<chart2summary>` |      200 |
-| `doc_aa00d01e639cf879439b5f4c9313f1647bba27070a833569dee0b3eeb3476731_page_000001-picture-01` | `<chart2code>`    |      131 |
-| `doc_aa00d01e639cf879439b5f4c9313f1647bba27070a833569dee0b3eeb3476731_page_000001-picture-01` | `<chart2summary>` |       10 |
-| `doc_f0ab823f66709631e6226a937a8d68b52bde1e7ff6ef28086563c0646867c769_page_000001-picture-00` | `<chart2code>`    |       28 |
-| `doc_f0ab823f66709631e6226a937a8d68b52bde1e7ff6ef28086563c0646867c769_page_000001-picture-00` | `<chart2csv>`     |       42 |
-| `doc_f0ab823f66709631e6226a937a8d68b52bde1e7ff6ef28086563c0646867c769_page_000001-picture-00` | `<chart2summary>` |       61 |
+| `doc_a012af9597cad209a43dc6a6a4543994e857a56fac9fdd3eed92a5e1b93f79b2_page_000001-picture-00` | `<chart2summary>` |       51 |
+| `doc_aa00d01e639cf879439b5f4c9313f1647bba27070a833569dee0b3eeb3476731_page_000001-picture-00` | `<chart2code>`    |       31 |
+| `doc_aa00d01e639cf879439b5f4c9313f1647bba27070a833569dee0b3eeb3476731_page_000001-picture-00` | `<chart2summary>` |      139 |
+| `doc_aa00d01e639cf879439b5f4c9313f1647bba27070a833569dee0b3eeb3476731_page_000001-picture-01` | `<chart2summary>` |       68 |
+| `doc_f0ab823f66709631e6226a937a8d68b52bde1e7ff6ef28086563c0646867c769_page_000001-picture-00` | `<chart2code>`    |      220 |
+| `doc_f0ab823f66709631e6226a937a8d68b52bde1e7ff6ef28086563c0646867c769_page_000001-picture-00` | `<chart2csv>`     |       36 |
+| `doc_f0ab823f66709631e6226a937a8d68b52bde1e7ff6ef28086563c0646867c769_page_000001-picture-00` | `<chart2summary>` |       92 |
 
 ### Logit-level check
+
+This check is a separate teacher-forced experiment that predates the 2026-09-05 comparison
+above and is retained as it was recorded; the greedy divergence positions it cites are that
+earlier run's.
 
 For the five manifest table crops and five manifest chart crops, the `<tables_otsl>` and `<chart2csv>`
 inputs were built through the MLX stage builder/template and the official `compare_backends.py`
@@ -395,29 +328,36 @@ layout preset, the DocumentFigure picture classifier, and Docling's default char
 stage-owned `VlmModelSpec.max_new_tokens=4096`; the official stages keep their own unbounded
 `tokenizer.model_max_length`. Docling's official Granite stages accept CPU or CUDA only, so the
 official pipeline runs on the `auto` accelerator: layout and picture classification on Torch MPS
-and Granite forced to CPU. Because a Granite CPU table crop costs about 70 s and a chart crop about
-89 s, the component uses the first 50 pages of the pinned manifest with one
+and Granite forced to CPU. Because a Granite CPU table crop costs about 71 s and a chart crop about
+73 s, the component uses the first 50 pages of the pinned manifest with one
 construction-plus-inference warm-up and one timed round. That window is the first prefix of the
 manifest that carries both table and chart work: each side detected 6 table clusters and classified
 14 pictures as a bar, line, or pie chart, so both Granite stages were exercised.
 
+The official rows use the same `create_causal_mask` wrapper described above.
+
 Machine: Apple M4 Pro, 48 GiB unified memory, macOS 26.5.2; Python 3.13.13;
-Docling 2.124.0, docling-ibm-models 4.0.1, MLX 0.32.2, mlx-vlm 0.6.4, Torch
-2.14.0, Transformers 5.8.1; measured on 2026-09-04 with `tools/compare_backends.py` schema 2.
+Docling 2.126.0, docling-ibm-models 4.0.2, MLX 0.32.2, mlx-vlm 0.6.17, Torch
+2.14.0, Transformers 5.16.1; measured on 2026-09-05 with `tools/compare_backends.py` schema 2 and
+`MLX_ENABLE_TF32=0`.
 
 | implementation | device        | warm ms/item (median) | warm ms/item (mean) | timed round s | first-call ms |  peak RSS | tables | charts | markdown identity | layout cluster agreement at IoU >= 0.5 | layout unmatched (MLX/official) | table structure exact | table unmatched (MLX/official) |
 | -------------- | ------------- | --------------------: | ------------------: | ------------: | ------------: | --------: | -----: | -----: | ----------------: | -------------------------------------: | ------------------------------- | --------------------: | ------------------------------ |
-| mlx            | mlx-metal     |               157.134 |            2988.429 |         149.4 |      9066.646 |  5.13 GiB |      6 |     14 |          0.960000 |                               1.000000 | 0 / 0                           |              1.000000 | 0 / 0                          |
-| official       | torch-mps+cpu |               173.693 |           15061.900 |         753.1 |     50710.539 | 17.71 GiB |      6 |     14 |         reference |                              reference | reference                       |             reference | reference                      |
+| mlx            | mlx-metal     |               102.102 |            2769.909 |         138.5 |      3855.916 | 16.03 GiB |      6 |     14 |          0.980000 |                               1.000000 | 0 / 0                           |              1.000000 | 0 / 0                          |
+| official       | torch-mps+cpu |               162.016 |           14331.059 |         716.6 |      5237.575 | 17.80 GiB |      6 |     14 |         reference |                              reference | reference                       |             reference | reference                      |
 
-The MLX process took 158.5 s of wall clock and the official process 803.8 s. Both runs converted all
+The MLX process took 142.4 s of wall clock and the official process 721.8 s. Both runs converted all
 50 pages with `success` status. Every layout cluster and all 6 table structures agreed, so the
 Granite table crops decoded to the same OTSL on Metal BF16 and CPU BF16 here. Markdown identity is
-0.960000 because 2 of the 50 pages differ, and both differences are single values inside a
-chart-derived CSV table on a page with no document table (`7.6` versus `7.7` and `60` versus `50`);
-that is the expected BF16 greedy-decoding divergence documented above, not a structural difference.
-Each raw report records `input_count` 50 together with the selected page ids, so the window is
-reproducible without re-deriving it.
+0.980000 because 1 of the 50 pages differs, inside a chart-derived CSV table on a page with no
+document table: three header cells differ only in capitalization and one value is `7.6` versus
+`7.7`. That is the expected BF16 greedy-decoding divergence documented above, not a structural
+difference. Each raw report records `input_count` 50 together with the selected page ids, so the
+window is reproducible without re-deriving it.
+
+MLX peak RSS was 16.03 GiB against 5.13 GiB for the same component on 2026-09-04, and the official
+side was 17.80 GiB against 17.71 GiB. These are measurements across two dependency stacks; the run
+does not isolate a cause for the MLX change.
 
 The median per page hides the Granite work: 34 of the 50 pages carry no table or chart, so both
 Granite stages run on the remaining 16 pages, and the per-page mean and the timed-round total are
@@ -425,44 +365,9 @@ the comparable figures. Split by page kind, from the per-item wall clock in the 
 
 | Pages                               | MLX p50 | MLX max | MLX total | Official p50 | Official max | Official total |
 | ----------------------------------- | ------: | ------: | --------: | -----------: | -----------: | -------------: |
-| 34 without table or chart work      |  118 ms |   0.4 s |     4.9 s |       135 ms |        0.5 s |          5.7 s |
-| 16 with tables or charts (20 crops) |   7.4 s |  21.4 s |   144.5 s |       45.5 s |      102.1 s |        747.4 s |
-| timed round                         |         |         |   149.4 s |              |              |        753.1 s |
-
-### MLX-only data point on the 2026-09-05 stack
-
-The 2026-09-05 backend benchmark re-ran the three Granite components, and only the MLX side
-completed. The pinned `ibm-granite/granite-vision-4.1-4b` artifact ships its own modeling code,
-written for Transformers 4.57 and identical in the newest upstream revision, whose forward pass
-calls `create_causal_mask` with `cache_position`. Transformers 5.16 no longer accepts that
-argument, and Docling's official Granite table and chart stages load that code with
-`trust_remote_code`, so `granite_table/official`, `granite_chart/official`, and
-`pipeline_granite/official` all raised
-`TypeError: create_causal_mask() got an unexpected keyword argument 'cache_position'`. The paired
-tables above therefore keep their 2026-09-03 and 2026-09-04 measurements.
-
-The rows below are an MLX-only data point on the newer dependency stack. They are deliberately not
-paired: no official number was measured against them, and comparing them with the official columns
-above would cross two different stacks. Inputs, window, and stage settings are otherwise the ones
-described earlier in this comparison; `granite_table` and `granite_chart` measure five crops each
-with three timed rounds, and `pipeline_granite` measures the same first 50 pages with one timed
-round.
-
-Machine: Apple M4 Pro, 48 GiB unified memory, macOS 26.5.2; Python 3.13.13;
-Docling 2.126.0, docling-ibm-models 4.0.2, MLX 0.32.2, mlx-vlm 0.6.17, Torch
-2.14.0, Transformers 5.16.1; measured on 2026-09-05 with `tools/compare_backends.py` schema 2 and
-`MLX_ENABLE_TF32=0`, which is inert on M4 and recorded for completeness.
-
-| component          | device    | items    | warm ms/item (median) | warm ms/item (mean) | first-call ms |  peak RSS | generated tokens/request (median) | tokens/s |
-| ------------------ | --------- | -------- | --------------------: | ------------------: | ------------: | --------: | --------------------------------: | -------: |
-| `granite_table`    | mlx-metal | 5 crops  |             15374.099 |           15624.673 |     24492.679 |  8.13 GiB |                               430 |   28.300 |
-| `granite_chart`    | mlx-metal | 5 crops  |             18656.438 |           18426.406 |     21496.794 |  8.12 GiB |                               166 |   28.422 |
-| `pipeline_granite` | mlx-metal | 50 pages |               102.102 |            2769.909 |      3855.916 | 16.03 GiB |                                 - |        - |
-
-The `pipeline_granite` timed round took 138.5 s and the process 142.4 s of wall clock; it again
-detected 6 table clusters and classified 14 pictures as a bar, line, or pie chart, and all 50 pages
-converted with `success` status. Its MLX peak RSS is 16.03 GiB against the 5.13 GiB recorded on
-2026-09-04; the run does not isolate what changed between the two dependency stacks.
+| 34 without table or chart work      |   87 ms |   0.2 s |     3.3 s |       118 ms |        0.3 s |          4.7 s |
+| 16 with tables or charts (20 crops) |   6.4 s |  18.2 s |   135.2 s |       42.7 s |       90.9 s |        711.8 s |
+| timed round                         |         |         |   138.5 s |              |              |        716.6 s |
 
 ## Clean-wheel qualification
 

@@ -130,8 +130,8 @@ records the full comparison.
 | TableFormer v1 accurate       | table      |     81.1 ms | 154.1 ms | Torch MPS       |
 | TableFormer v1 fast           | table      |     40.3 ms |  78.3 ms | Torch MPS       |
 | TableFormerV2                 | table      |     36.5 ms | 146.0 ms | Torch MPS       |
-| Granite Vision table          | table crop |      15.3 s |   70.2 s | Torch CPU       |
-| Granite Vision chart          | chart crop |      18.6 s |   88.8 s | Torch CPU       |
+| Granite Vision table          | table crop |      15.4 s |   70.9 s | Torch CPU       |
+| Granite Vision chart          | chart crop |      18.7 s |   73.5 s | Torch CPU       |
 
 The pipeline tables report the mean per page and the timed-round total rather than the median:
 only pages with tables or charts run the table and Granite stages, so the median page carries
@@ -153,19 +153,19 @@ crops, and markdown identity is below 1.0 because Granite differs within BF16 no
 
 | implementation | device        | warm ms/page (mean) | timed round s | first-call ms |  peak RSS | markdown identity | layout cluster agreement at IoU >= 0.5 | table structure exact |
 | -------------- | ------------- | ------------------: | ------------: | ------------: | --------: | ----------------: | -------------------------------------: | --------------------: |
-| mlx            | mlx-metal     |            2988.429 |         149.4 |      9066.646 |  5.13 GiB |          0.960000 |                               1.000000 |              1.000000 |
-| official       | torch-mps+cpu |           15061.900 |         753.1 |     50710.539 | 17.71 GiB |         reference |                              reference |             reference |
+| mlx            | mlx-metal     |            2769.909 |         138.5 |      3855.916 | 16.03 GiB |          0.980000 |                               1.000000 |              1.000000 |
+| official       | torch-mps+cpu |           14331.059 |         716.6 |      5237.575 | 17.80 GiB |         reference |                              reference |             reference |
 
 Machine: Apple M4 Pro, 48 GiB unified memory, macOS 26.5.2; Python 3.13.13;
 Docling 2.126.0, docling-ibm-models 4.0.2, MLX 0.32.2, mlx-vlm 0.6.17, Torch
 2.14.0, Transformers 5.16.1; measured on 2026-09-05 with `tools/compare_backends.py` schema 2 and
-`MLX_ENABLE_TF32=0`, which is inert on M4 and recorded for completeness.
+`MLX_ENABLE_TF32=0`.
 
-The two Granite Vision rows and the Granite pipeline table keep their 2026-09-03 and 2026-09-04
-numbers on the previous stack (Docling 2.124.0, docling-ibm-models 4.0.1, mlx-vlm 0.6.4,
-Transformers 5.8.1). The pinned Granite artifact ships its own modeling code, which Docling's
-official Granite stages load with `trust_remote_code`, and that code does not run on
-Transformers 5.16, so the official Granite side could not be re-measured on the current stack.
+The official Granite rows ran through a benchmark-side wrapper in `tools/compare_backends.py`: the
+pinned Granite artifact's own modeling code, which Docling loads with `trust_remote_code`, passes an
+argument to a Transformers masking helper that Transformers 5.9 removed, so Docling's Granite stages
+otherwise raise `TypeError` on the pinned Transformers. The wrapper only drops that argument; the
+Granite validation record shows the official outputs it produces.
 
 Regenerate the tables with [`tools/compare_backends.py`](https://github.com/AtkinsChang/docling-mlx/blob/main/DEVELOPMENT.md#qualification-and-tools).
 
