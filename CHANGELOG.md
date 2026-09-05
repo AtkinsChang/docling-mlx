@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.1](https://github.com/AtkinsChang/docling-mlx/compare/v0.1.0...v0.1.1) (2026-09-05)
+
+
+### Bug Fixes
+
+* **engines:** admit one thread at a time into each compiled backbone ([288884f](https://github.com/AtkinsChang/docling-mlx/commit/288884ff36c18049da9d6e9aa3d2d88f49c334c8))
+* **tools:** run the official Granite benchmark on Transformers 5.16 ([bfdeae8](https://github.com/AtkinsChang/docling-mlx/commit/bfdeae8b918147f8a30f7c8abf2987c8b82d8367))
+
+
+### Performance
+
+* **tableformer/v1:** double buffer the greedy decode loop ([f90feee](https://github.com/AtkinsChang/docling-mlx/commit/f90feeecf258912b8b9f782a9698c5b749c5711c))
+* **tableformer/v2:** double buffer the greedy decode loop ([4341a2a](https://github.com/AtkinsChang/docling-mlx/commit/4341a2a2766f625d3384e20d6d8ba76e363f360d))
+* **tableformer/v2:** read the emitted token without a new op ([5bbedaa](https://github.com/AtkinsChang/docling-mlx/commit/5bbedaa54ac9a1fdf0ee8d0c8a0479d184a9a855))
+
 ## 0.1.0 (2026-09-04)
 
 
