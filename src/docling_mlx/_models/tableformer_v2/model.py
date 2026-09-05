@@ -286,6 +286,23 @@ class TableFormerV2(nn.Module):
             past_key_values=decoded.past_key_values,
         )
 
+    def _greedy_token_step(
+        self,
+        input_ids: mx.array,
+        encoder_hidden_states: mx.array,
+        past_key_values: DecoderProjectedCache | None,
+        cross_attention_cache: CrossAttentionCache,
+    ) -> tuple[mx.array, DecoderProjectedCache | None]:
+        decoded = self.decode_tokens(
+            input_ids,
+            encoder_hidden_states,
+            past_key_values=past_key_values,
+            cross_attention_cache=cross_attention_cache,
+            use_cache=True,
+        )
+        next_token = mx.argmax(decoded.logits[:, -1, :], axis=-1).astype(mx.int32)[:, None]
+        return next_token, decoded.past_key_values
+
     def generate(
         self,
         pixels: mx.array,
@@ -300,33 +317,34 @@ class TableFormerV2(nn.Module):
             raise ValueError("TableFormerV2 generation steps must be between 1 and 512")
 
         encoder_outputs = self.encode_images(pixels)
-        mx.eval(encoder_outputs.last_hidden_state)
-        cross_attention_cache = self.prepare_cross_attention_cache(
-            encoder_outputs.last_hidden_state
+        memory = encoder_outputs.last_hidden_state
+        mx.eval(memory)
+        cross_attention_cache = self.prepare_cross_attention_cache(memory)
+        tokens = [mx.full((pixels.shape[0], 1), _BOS_TOKEN_ID, dtype=mx.int32)]
+        next_token, past_key_values = self._greedy_token_step(
+            tokens[0], memory, None, cross_attention_cache
         )
-        generated_ids = mx.full((pixels.shape[0], 1), _BOS_TOKEN_ID, dtype=mx.int32)
-        current_input = generated_ids
-        past_key_values: DecoderProjectedCache | None = None
+        mx.async_eval(next_token)
 
-        for _ in range(max_generation_steps):
-            decoded = self.decode_tokens(
-                current_input,
-                encoder_outputs.last_hidden_state,
-                past_key_values=past_key_values,
-                cross_attention_cache=cross_attention_cache,
-                use_cache=True,
-            )
-            next_token = mx.argmax(decoded.logits[:, -1, :], axis=-1).astype(mx.int32)[:, None]
-            generated_ids = mx.concatenate([generated_ids, next_token], axis=1)
-            past_key_values = decoded.past_key_values
-            mx.eval(generated_ids)
-            current_input = next_token
-            if bool(mx.all(next_token == self.config.eos_token_id).item()):
+        for step in range(max_generation_steps):
+            pending = None
+            if step + 1 < max_generation_steps:
+                following_token, following_cache = self._greedy_token_step(
+                    next_token, memory, past_key_values, cross_attention_cache
+                )
+                mx.async_eval(following_token)
+                pending = (following_token, following_cache)
+            tokens.append(next_token)
+            emitted = cast(list[int], next_token.flatten().tolist())
+            if pending is None or all(token_id == self.config.eos_token_id for token_id in emitted):
                 break
+            next_token, past_key_values = pending
+
+        generated_ids = mx.concatenate(tokens, axis=1)
 
         final_decoded = self.decode_tokens(
             generated_ids,
-            encoder_outputs.last_hidden_state,
+            memory,
             cross_attention_cache=cross_attention_cache,
             use_cache=False,
         )
