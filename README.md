@@ -161,12 +161,6 @@ Docling 2.126.0, docling-ibm-models 4.0.2, MLX 0.32.2, mlx-vlm 0.6.17, Torch
 2.14.0, Transformers 5.16.1; measured on 2026-09-05 with `tools/compare_backends.py` schema 2 and
 `MLX_ENABLE_TF32=0`.
 
-The official Granite rows ran through a benchmark-side wrapper in `tools/compare_backends.py`: the
-pinned Granite artifact's own modeling code, which Docling loads with `trust_remote_code`, passes an
-argument to a Transformers masking helper that Transformers 5.9 removed, so Docling's Granite stages
-otherwise raise `TypeError` on the pinned Transformers. The wrapper only drops that argument; the
-Granite validation record shows the official outputs it produces.
-
 Regenerate the tables with [`tools/compare_backends.py`](https://github.com/AtkinsChang/docling-mlx/blob/main/DEVELOPMENT.md#qualification-and-tools).
 
 ## Documentation
