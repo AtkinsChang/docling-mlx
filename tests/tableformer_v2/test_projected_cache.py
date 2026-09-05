@@ -42,6 +42,8 @@ def _config() -> Any:
 
 
 def test_projected_cache_matches_one_shot_projection_and_enforces_capacity() -> None:
+    # Projecting one position at a time and all three at once take different matmul
+    # paths, so the results may differ by a few float32 ulps; the tolerance allows that.
     mx = _required_module("mlx.core")
     decoder = _required_module("docling_mlx._models.tableformer_v2.decoder")
     attention = decoder.FusedMultiHeadAttention(embed_dim=16, num_heads=4)
@@ -62,11 +64,15 @@ def test_projected_cache_matches_one_shot_projection_and_enforces_capacity() -> 
         assert cache.offset == position + 1
         assert cached_keys.shape == (1, 4, position + 1, 4)
         np.testing.assert_allclose(
-            np.asarray(cached_keys), np.asarray(expected_keys[:, :, : position + 1]), atol=1e-6
+            np.asarray(cached_keys),
+            np.asarray(expected_keys[:, :, : position + 1]),
+            rtol=1e-6,
+            atol=1e-6,
         )
         np.testing.assert_allclose(
             np.asarray(cached_values),
             np.asarray(expected_values[:, :, : position + 1]),
+            rtol=1e-6,
             atol=1e-6,
         )
 
