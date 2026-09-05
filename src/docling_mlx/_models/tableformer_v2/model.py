@@ -336,8 +336,10 @@ class TableFormerV2(nn.Module):
                 mx.async_eval(following_token)
                 pending = (following_token, following_cache)
             tokens.append(next_token)
-            emitted = cast(list[int], next_token.flatten().tolist())
-            if pending is None or all(token_id == self.config.eos_token_id for token_id in emitted):
+            # Read the array that was already submitted. Any new op here, flatten
+            # included, enqueues work behind step N+1 and collapses the overlap.
+            emitted = cast(list[list[int]], next_token.tolist())
+            if pending is None or all(row[0] == self.config.eos_token_id for row in emitted):
                 break
             next_token, past_key_values = pending
 
