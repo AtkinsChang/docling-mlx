@@ -270,9 +270,9 @@ Component-specific preprocessing, parser, and acceptance details belong in
 `release.yaml` runs release-please on every push to `main`. It keeps a release pull request open
 that bumps `version` in `pyproject.toml` and rewrites `CHANGELOG.md` from the conventional commits
 since the last release (`feat`, `fix`, `perf`, and `revert` are listed; other types are hidden).
-While that branch exists the workflow refreshes `uv.lock` on it and, when the lock changed,
-commits it and dispatches CI on the branch, because pushes and pull requests made with the
-workflow token start no workflow runs on their own.
+While that branch exists the workflow refreshes `uv.lock` on it, commits the lock when it
+changed, and approves the pull request's pending CI run, because a bot-authored pull request's
+run waits for approval and only that run's checks count for the pull request.
 Merging that pull request creates the `v*` tag and the
 GitHub release, then dispatches `publish.yaml` at that tag, which builds the distribution and
 publishes it to PyPI with trusted publishing under the `pypi` environment. The publish workflow runs

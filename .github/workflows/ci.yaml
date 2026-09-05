@@ -8,9 +8,6 @@ on:
   pull_request:
     branches:
       - main
-  # release.yaml dispatches CI on the release branch: pushes and pull requests made
-  # with the workflow token start no runs on their own.
-  workflow_dispatch:
 
 # Keyed on the ref, so a new push cancels the previous run of the same branch or
 # pull request. A ci/** branch with an open pull request runs once per event.

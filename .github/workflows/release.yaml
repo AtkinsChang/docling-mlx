@@ -56,21 +56,41 @@ jobs:
           python-version: "3.13"
 
       - if: steps.release-branch.outputs.exists == 'true'
-        name: Refresh the lockfile and run CI on the release branch
+        name: Refresh the lockfile and approve CI on the release pull request
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           uv lock
           if git diff --quiet -- uv.lock; then
-            echo "uv.lock is current; the release branch keeps its existing checks"
-            exit 0
+            echo "uv.lock is current"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -am "chore: refresh the lockfile for the release"
+            git push origin "HEAD:$RELEASE_BRANCH"
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -am "chore: refresh the lockfile for the release"
-          git push origin "HEAD:$RELEASE_BRANCH"
-          gh workflow run ci.yaml --repo "$GITHUB_REPOSITORY" --ref "$RELEASE_BRANCH"
+          # The pull_request run for a bot-authored pull request waits for approval, and
+          # only that run's checks count for the pull request. Approve it once it appears.
+          head="$(git rev-parse HEAD)"
+          for _ in $(seq 1 12); do
+            runs="$(gh run list --repo "$GITHUB_REPOSITORY" --branch "$RELEASE_BRANCH" \
+              --event pull_request --limit 10 --json databaseId,headSha,conclusion)"
+            pending="$(jq -r --arg sha "$head" \
+              '.[] | select(.headSha == $sha and .conclusion == "action_required") | .databaseId' <<<"$runs" | head -n 1)"
+            if [ -n "$pending" ]; then
+              gh api -X POST "repos/$GITHUB_REPOSITORY/actions/runs/$pending/approve" >/dev/null
+              echo "approved run $pending for $head"
+              exit 0
+            fi
+            if jq -e --arg sha "$head" '.[] | select(.headSha == $sha)' <<<"$runs" >/dev/null; then
+              echo "run for $head already started"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "no pull_request run appeared for $head" >&2
+          exit 1
 
   publish:
     needs: release-please
