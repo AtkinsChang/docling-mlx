@@ -55,6 +55,41 @@ Earlier Accurate-only Torch CPU comparisons remain historical evidence only; the
 current two-profile benchmark. The pinned mirror revision above has the upstream checkpoint layout;
 runtime supports that layout as well as converted artifacts.
 
+## Async-eval double buffering
+
+The greedy loop applies the `xcel`/`lcel`/`fcel` structural correction on device, so the next decode
+step is built from the previous token without a host round trip and can be submitted with
+`mx.async_eval` before the current token is read back, following the mlx-lm `generate_step` pattern.
+The stop decision lands one step late, so one step past it is computed and discarded. The loop does
+not build that lookahead on the final permitted step, so the profile step budget still caps the
+sequence and the decoder never sees a sequence past its positional-encoding limit.
+
+Measured on an Apple M4 Pro, 48 GiB, macOS 26.5.2, Python 3.13.13, MLX 0.32.2, Transformers 5.16.1,
+docling-ibm-models 4.0.2, with `MLX_ENABLE_TF32=0`, on 2026-09-05. One fresh process per profile and
+side ran the engine boundary over the three basin crops in one batch of three, with 5 warmups and 30
+measured rounds; the values below divide each batch measurement by three. These crops generate
+longer sequences than the inputs behind the p50/p95 timings recorded above, so the two records
+measure different work and are not comparable.
+
+| Profile  | IDs per crop | p50 before | p50 after | Mean before | Mean after | p50 improvement |
+| -------- | ------------ | ---------: | --------: | ----------: | ---------: | --------------: |
+| Accurate | 101/242/272  |  542.78 ms | 429.67 ms |   541.12 ms |  429.77 ms |           20.8% |
+| Fast     | 72/212/210   |  223.85 ms | 144.22 ms |   223.00 ms |  144.62 ms |           35.6% |
+
+The 30-sample batch ranges do not overlap: Accurate 1577–1646 ms before against 1276–1312 ms after,
+and Fast 653–676 ms before against 424–447 ms after.
+
+Token IDs, OTSL tokens, cell boxes, and bbox classes were captured over the same three crops before
+and after, and the serialized captures are byte-identical. `tools/tableformer_v1/validate_parity.py`
+was run from both sides against fresh pinned Torch CPU captures: all 51 Accurate and 45 Fast gates
+match field for field, and both sides reproduce the parity table above exactly. Worst observed values
+were normalized box max absolute error `5.13e-6` for Accurate and `5.42e-6` for Fast against the
+`1e-4` cap, greedy-step logits max absolute error `2.86e-5` and `1.10e-4` and bbox class-logit max
+absolute error `1.53e-4` and `1.01e-4` against the `1e-3` cap, and page-space stage box max absolute
+error `9.77e-4` and `1.01e-3` against that gate's `2e-3` cap. That validator traces its own step loop
+for the generation and prediction gates, so the changed loop is covered there by the
+`stage.structured_output` gate, which runs the Docling stage end to end.
+
 ## Compatibility behavior
 
 The qualified stage preserves the exact OpenCV preprocessing documented in [README.md](README.md).

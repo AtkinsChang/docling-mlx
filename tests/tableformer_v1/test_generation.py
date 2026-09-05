@@ -63,7 +63,8 @@ def test_generation_applies_structural_corrections_and_stops_on_eos(
         np.array([[2, 6, 9, 6, 7, 5, 3]], dtype=np.int32),
     )
     np.testing.assert_array_equal(np.asarray(output.hidden_states)[0, :, 0], np.arange(6))
-    assert calls == [1, 2, 3, 4, 5, 6]
+    # Six consumed steps plus the double-buffered lookahead discarded at EOS.
+    assert calls == [1, 2, 3, 4, 5, 6, 7]
     assert output.cache.shape == (6, 6, 1, 1)
 
 
