@@ -105,7 +105,10 @@ Each prediction contains OTSL tokens and crop-pixel cell boxes. Only the stage a
 backend or converts those values to `TableCell` objects. The engine requires Apple Silicon when
 initialized; the stage also validates Docling accelerator options.
 Runtime initialization compiles only the ResNet-18 image backbone; tag encoding, autoregressive
-decoding, and bbox decoding remain eager.
+decoding, and bbox decoding remain eager. The greedy loop is double buffered: the structural
+`xcel`/`lcel`/`fcel` correction runs on device so every step can submit the next step with
+`mx.async_eval` before reading the current token back to the host, and one step past the stop
+condition is computed and discarded.
 
 ## Exact upstream preprocessing and structure compatibility
 

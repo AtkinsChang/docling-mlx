@@ -22,6 +22,10 @@ from .config import TABLEFORMER_V1_TOKENS, TableFormerV1Config
 
 type DecoderCache = mx.array
 _TOKENS = TABLEFORMER_V1_TOKENS
+_XCEL_ID = _TOKENS.index("xcel")
+_LCEL_ID = _TOKENS.index("lcel")
+_FCEL_ID = _TOKENS.index("fcel")
+_UCEL_ID = _TOKENS.index("ucel")
 
 
 @dataclass(frozen=True, slots=True)
@@ -203,13 +207,24 @@ class TableFormerV1TokenDecoder(nn.Module):
         hidden_state, next_cache = self._decoder(embedded, memory, cache)
         return DecoderStepOutput(self._fc(hidden_state[-1]), hidden_state, next_cache)
 
-    def _correct_token(self, token_id: int, generated: list[int]) -> int:
-        token = _TOKENS[token_id]
-        if token == "xcel":
-            token = "lcel"
-        if generated[-1] == 7 and token == "lcel":
-            token = "fcel"
-        return _TOKENS.index(token)
+    def _correct_token(self, token_id: mx.array, previous_token_id: mx.array) -> mx.array:
+        """Rewrite ``xcel`` to ``lcel``, and ``lcel`` after ``ucel`` to ``fcel``."""
+
+        corrected = mx.where(token_id == _XCEL_ID, _LCEL_ID, token_id)
+        return mx.where(
+            mx.logical_and(previous_token_id == _UCEL_ID, corrected == _LCEL_ID),
+            _FCEL_ID,
+            corrected,
+        )
+
+    def _greedy_step(
+        self, input_ids: mx.array, memory: mx.array, cache: DecoderCache | None
+    ) -> tuple[mx.array, DecoderStepOutput]:
+        output = self.step(input_ids, memory, cache)
+        token = self._correct_token(
+            mx.argmax(output.logits, axis=-1).astype(mx.int32), input_ids[-1]
+        )
+        return token, output
 
     def generate(
         self, memory: mx.array, *, max_generation_steps: int | None = None
@@ -220,20 +235,29 @@ class TableFormerV1TokenDecoder(nn.Module):
         if not 0 < steps <= self.max_generation_steps:
             raise ValueError("max_generation_steps must be between 1 and the profile limit")
 
+        input_ids = mx.array([[self.bos_token_id]], dtype=mx.int32)
+        token, output = self._greedy_step(input_ids, memory, None)
+        mx.async_eval(token)
+
         generated = [self.bos_token_id]
         hidden_states: list[mx.array] = []
         cache = None
-        for _ in range(steps):
-            output = self.step(mx.array(generated, dtype=mx.int32)[:, None], memory, cache)
-            mx.eval(output.logits)
-            token_id = self._correct_token(
-                cast(int, mx.argmax(output.logits, axis=-1).item()), generated
-            )
+        for index in range(steps):
+            pending = None
+            if index + 1 < steps:
+                following_ids = mx.concatenate([input_ids, token[None]], axis=0)
+                following_token, following_output = self._greedy_step(
+                    following_ids, memory, output.cache
+                )
+                mx.async_eval(following_token)
+                pending = (following_ids, following_token, following_output)
+            token_id = cast(int, token.item())
             generated.append(token_id)
             hidden_states.append(output.hidden_state)
             cache = output.cache
-            if token_id == self.eos_token_id:
+            if pending is None or token_id == self.eos_token_id:
                 break
+            input_ids, token, output = pending
 
         if cache is None:
             raise RuntimeError("TableFormer v1 generation did not produce a decoder cache")

@@ -164,13 +164,13 @@ def _native_trace(model: Any, pixels: np.ndarray) -> dict[str, np.ndarray]:
     memory_value = memory[f"tag_encoder.layers.{model.config.encoder_layers - 1}"]
     generated, logits, hidden_states, cache = [2], [], [], None
     for _ in range(model.config.max_steps):
-        output = model._tag_transformer.step(
-            mx.array(generated, dtype=mx.int32)[:, None], memory_value, cache
-        )
+        input_ids = mx.array(generated, dtype=mx.int32)[:, None]
+        output = model._tag_transformer.step(input_ids, memory_value, cache)
         mx.eval(output.logits, output.hidden_state, output.cache)
-        token = model._tag_transformer._correct_token(
-            cast(int, mx.argmax(output.logits, axis=-1).item()), generated
+        corrected = model._tag_transformer._correct_token(
+            mx.argmax(output.logits, axis=-1).astype(mx.int32), input_ids[-1]
         )
+        token = cast(int, corrected.item())
         generated.append(token)
         logits.append(output.logits)
         hidden_states.append(output.hidden_state)
