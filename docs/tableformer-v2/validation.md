@@ -177,10 +177,11 @@ warm-up call, then three timed rounds over all 63 DPBench ground-truth table
 crops. MLX used Metal and the official Docling implementation used Torch MPS.
 
 Machine: Apple M4 Pro, 48 GiB unified memory, macOS 26.5.2; Python 3.13.13;
-Docling 2.124.0, docling-ibm-models 4.0.1, MLX 0.32.2, mlx-vlm 0.6.4, Torch
-2.14.0, Transformers 5.8.1; measured on 2026-09-03 with `tools/compare_backends.py` schema 2.
+Docling 2.126.0, docling-ibm-models 4.0.2, MLX 0.32.2, mlx-vlm 0.6.17, Torch
+2.14.0, Transformers 5.16.1; measured on 2026-09-05 with `tools/compare_backends.py` schema 2 and
+`MLX_ENABLE_TF32=0`, which is inert on M4 and recorded for completeness.
 
 | implementation | device    | warm ms/item (median) | first-call ms | peak RSS | exact OTSL sequence | tree TEDS | cell-bbox mean IoU | unmatched MLX / official |
 | -------------- | --------- | --------------------: | ------------: | -------: | ------------------: | --------: | -----------------: | ------------------------ |
-| mlx            | mlx-metal |                48.770 |       450.812 | 0.39 GiB |            1.000000 |  1.000000 |           0.999996 | 0 / 0                    |
-| official       | torch-mps |               149.611 |      4303.018 | 0.74 GiB |           reference | reference |          reference | reference                |
+| mlx            | mlx-metal |                36.487 |       285.056 | 0.39 GiB |            1.000000 |  1.000000 |           0.999996 | 0 / 0                    |
+| official       | torch-mps |               145.993 |      3417.899 | 0.74 GiB |           reference | reference |          reference | reference                |

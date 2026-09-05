@@ -121,15 +121,15 @@ records the full comparison.
 
 | Component                     | Item       | MLX (Metal) | Official | Official device |
 | ----------------------------- | ---------- | ----------: | -------: | --------------- |
-| Heron R50 layout              | page       |     42.2 ms |  70.7 ms | Torch MPS       |
-| Heron R101 layout             | page       |     67.1 ms |  98.0 ms | Torch MPS       |
-| Egret medium layout           | page       |     30.1 ms |  45.8 ms | Torch MPS       |
-| Egret large layout            | page       |     40.7 ms |  59.3 ms | Torch MPS       |
-| Egret xlarge layout           | page       |     62.7 ms |  87.4 ms | Torch MPS       |
-| DocumentFigure classification | picture    |      3.8 ms |  13.5 ms | Torch MPS       |
-| TableFormer v1 accurate       | table      |     99.0 ms | 167.0 ms | Torch MPS       |
-| TableFormer v1 fast           | table      |     57.3 ms |  79.4 ms | Torch MPS       |
-| TableFormerV2                 | table      |     48.8 ms | 149.6 ms | Torch MPS       |
+| Heron R50 layout              | page       |     42.1 ms |  69.3 ms | Torch MPS       |
+| Heron R101 layout             | page       |     65.6 ms |  97.6 ms | Torch MPS       |
+| Egret medium layout           | page       |     30.1 ms |  46.1 ms | Torch MPS       |
+| Egret large layout            | page       |     40.0 ms |  59.3 ms | Torch MPS       |
+| Egret xlarge layout           | page       |     61.8 ms |  86.3 ms | Torch MPS       |
+| DocumentFigure classification | picture    |      3.4 ms |  12.2 ms | Torch MPS       |
+| TableFormer v1 accurate       | table      |     81.1 ms | 154.1 ms | Torch MPS       |
+| TableFormer v1 fast           | table      |     40.3 ms |  78.3 ms | Torch MPS       |
+| TableFormerV2                 | table      |     36.5 ms | 146.0 ms | Torch MPS       |
 | Granite Vision table          | table crop |      15.3 s |   70.2 s | Torch CPU       |
 | Granite Vision chart          | chart crop |      18.6 s |   88.8 s | Torch CPU       |
 
@@ -143,8 +143,8 @@ Heron-default layout and TableFormer settings:
 
 | implementation | device    | warm ms/page (mean) | timed round s | first-call ms | peak RSS | markdown identity | layout cluster agreement at IoU >= 0.5 | table structure exact |
 | -------------- | --------- | ------------------: | ------------: | ------------: | -------: | ----------------: | -------------------------------------: | --------------------: |
-| mlx            | mlx-metal |             128.487 |          25.7 |      3459.828 | 1.79 GiB |          1.000000 |                               0.999494 |              1.000000 |
-| official       | torch-mps |             222.068 |          44.4 |      3557.298 | 2.25 GiB |         reference |                              reference |             reference |
+| mlx            | mlx-metal |             112.364 |          22.5 |      2602.021 | 1.72 GiB |          1.000000 |                               0.999494 |              1.000000 |
+| official       | torch-mps |             203.526 |          40.7 |      3191.657 | 2.18 GiB |         reference |                              reference |             reference |
 
 The full standard pipeline with Granite Vision table structure and chart extraction over the first
 50 DPBench PDFs, one construction-plus-inference warm-up and one timed round because Docling's
@@ -157,9 +157,16 @@ crops, and markdown identity is below 1.0 because Granite differs within BF16 no
 | official       | torch-mps+cpu |           15061.900 |         753.1 |     50710.539 | 17.71 GiB |         reference |                              reference |             reference |
 
 Machine: Apple M4 Pro, 48 GiB unified memory, macOS 26.5.2; Python 3.13.13;
-Docling 2.124.0, docling-ibm-models 4.0.1, MLX 0.32.2, mlx-vlm 0.6.4, Torch
-2.14.0, Transformers 5.8.1; measured on 2026-09-03 with `tools/compare_backends.py` schema 2.
-The Granite pipeline table was measured on 2026-09-04 in the same environment.
+Docling 2.126.0, docling-ibm-models 4.0.2, MLX 0.32.2, mlx-vlm 0.6.17, Torch
+2.14.0, Transformers 5.16.1; measured on 2026-09-05 with `tools/compare_backends.py` schema 2 and
+`MLX_ENABLE_TF32=0`, which is inert on M4 and recorded for completeness.
+
+The two Granite Vision rows and the Granite pipeline table keep their 2026-09-03 and 2026-09-04
+numbers on the previous stack (Docling 2.124.0, docling-ibm-models 4.0.1, mlx-vlm 0.6.4,
+Transformers 5.8.1). The pinned Granite artifact ships its own modeling code, which Docling's
+official Granite stages load with `trust_remote_code`, and that code does not run on
+Transformers 5.16, so the official Granite side could not be re-measured on the current stack.
+
 Regenerate the tables with [`tools/compare_backends.py`](https://github.com/AtkinsChang/docling-mlx/blob/main/DEVELOPMENT.md#qualification-and-tools).
 
 ## Documentation

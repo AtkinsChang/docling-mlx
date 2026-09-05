@@ -59,8 +59,9 @@ warm-up call, then three timed rounds over all 200 DPBench page images. MLX
 used Metal and the official Docling implementation used Torch MPS.
 
 Machine: Apple M4 Pro, 48 GiB unified memory, macOS 26.5.2; Python 3.13.13;
-Docling 2.124.0, docling-ibm-models 4.0.1, MLX 0.32.2, mlx-vlm 0.6.4, Torch
-2.14.0, Transformers 5.8.1; measured on 2026-09-03 with `tools/compare_backends.py` schema 2.
+Docling 2.126.0, docling-ibm-models 4.0.2, MLX 0.32.2, mlx-vlm 0.6.17, Torch
+2.14.0, Transformers 5.16.1; measured on 2026-09-05 with `tools/compare_backends.py` schema 2 and
+`MLX_ENABLE_TF32=0`, which is inert on M4 and recorded for completeness.
 
 Same-box label swaps are differently labelled matched detections for which MLX
 also emitted the official label at IoU >= 0.9; they are excluded from label
@@ -75,9 +76,9 @@ neither class changed a document output.
 
 | model  | implementation | device    | warm ms/item (median) | first-call ms | peak RSS | label agreement at IoU >= 0.5, excluding same-box swaps | same-box label swaps | matched-box mean IoU | mean abs score delta | threshold-boundary unmatched MLX / official | other unmatched MLX / official |
 | ------ | -------------- | --------- | --------------------: | ------------: | -------: | ------------------------------------------------------: | -------------------: | -------------------: | -------------------: | ------------------------------------------- | ------------------------------ |
-| medium | mlx            | mlx-metal |                30.070 |       227.979 | 1.69 GiB |                                                1.000000 |                    1 |             0.999938 |             0.000240 | 3 / 0                                       | 0 / 0                          |
-| medium | official       | torch-mps |                45.832 |      2922.873 | 2.34 GiB |                                               reference |            reference |            reference |            reference | reference                                   | reference                      |
-| large  | mlx            | mlx-metal |                40.665 |       300.484 | 1.77 GiB |                                                1.000000 |                    8 |             0.999934 |             0.000284 | 1 / 1                                       | 0 / 0                          |
-| large  | official       | torch-mps |                59.318 |      3048.787 | 2.30 GiB |                                               reference |            reference |            reference |            reference | reference                                   | reference                      |
-| xlarge | mlx            | mlx-metal |                62.724 |       506.441 | 2.08 GiB |                                                1.000000 |                    0 |             0.999938 |             0.000186 | 0 / 2                                       | 0 / 0                          |
-| xlarge | official       | torch-mps |                87.380 |      3230.523 | 2.32 GiB |                                               reference |            reference |            reference |            reference | reference                                   | reference                      |
+| medium | mlx            | mlx-metal |                30.066 |       219.154 | 1.69 GiB |                                                1.000000 |                    1 |             0.999938 |             0.000240 | 3 / 0                                       | 0 / 0                          |
+| medium | official       | torch-mps |                46.116 |      2747.635 | 2.32 GiB |                                               reference |            reference |            reference |            reference | reference                                   | reference                      |
+| large  | mlx            | mlx-metal |                39.990 |       297.620 | 1.77 GiB |                                                1.000000 |                    8 |             0.999934 |             0.000284 | 1 / 1                                       | 0 / 0                          |
+| large  | official       | torch-mps |                59.279 |      2856.302 | 2.33 GiB |                                               reference |            reference |            reference |            reference | reference                                   | reference                      |
+| xlarge | mlx            | mlx-metal |                61.758 |       506.425 | 2.08 GiB |                                                1.000000 |                    0 |             0.999938 |             0.000186 | 0 / 2                                       | 0 / 0                          |
+| xlarge | official       | torch-mps |                86.303 |      2992.342 | 2.34 GiB |                                               reference |            reference |            reference |            reference | reference                                   | reference                      |

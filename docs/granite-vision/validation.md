@@ -429,6 +429,41 @@ the comparable figures. Split by page kind, from the per-item wall clock in the 
 | 16 with tables or charts (20 crops) |   7.4 s |  21.4 s |   144.5 s |       45.5 s |      102.1 s |        747.4 s |
 | timed round                         |         |         |   149.4 s |              |              |        753.1 s |
 
+### MLX-only data point on the 2026-09-05 stack
+
+The 2026-09-05 backend benchmark re-ran the three Granite components, and only the MLX side
+completed. The pinned `ibm-granite/granite-vision-4.1-4b` artifact ships its own modeling code,
+written for Transformers 4.57 and identical in the newest upstream revision, whose forward pass
+calls `create_causal_mask` with `cache_position`. Transformers 5.16 no longer accepts that
+argument, and Docling's official Granite table and chart stages load that code with
+`trust_remote_code`, so `granite_table/official`, `granite_chart/official`, and
+`pipeline_granite/official` all raised
+`TypeError: create_causal_mask() got an unexpected keyword argument 'cache_position'`. The paired
+tables above therefore keep their 2026-09-03 and 2026-09-04 measurements.
+
+The rows below are an MLX-only data point on the newer dependency stack. They are deliberately not
+paired: no official number was measured against them, and comparing them with the official columns
+above would cross two different stacks. Inputs, window, and stage settings are otherwise the ones
+described earlier in this comparison; `granite_table` and `granite_chart` measure five crops each
+with three timed rounds, and `pipeline_granite` measures the same first 50 pages with one timed
+round.
+
+Machine: Apple M4 Pro, 48 GiB unified memory, macOS 26.5.2; Python 3.13.13;
+Docling 2.126.0, docling-ibm-models 4.0.2, MLX 0.32.2, mlx-vlm 0.6.17, Torch
+2.14.0, Transformers 5.16.1; measured on 2026-09-05 with `tools/compare_backends.py` schema 2 and
+`MLX_ENABLE_TF32=0`, which is inert on M4 and recorded for completeness.
+
+| component          | device    | items    | warm ms/item (median) | warm ms/item (mean) | first-call ms |  peak RSS | generated tokens/request (median) | tokens/s |
+| ------------------ | --------- | -------- | --------------------: | ------------------: | ------------: | --------: | --------------------------------: | -------: |
+| `granite_table`    | mlx-metal | 5 crops  |             15374.099 |           15624.673 |     24492.679 |  8.13 GiB |                               430 |   28.300 |
+| `granite_chart`    | mlx-metal | 5 crops  |             18656.438 |           18426.406 |     21496.794 |  8.12 GiB |                               166 |   28.422 |
+| `pipeline_granite` | mlx-metal | 50 pages |               102.102 |            2769.909 |      3855.916 | 16.03 GiB |                                 - |        - |
+
+The `pipeline_granite` timed round took 138.5 s and the process 142.4 s of wall clock; it again
+detected 6 table clusters and classified 14 pictures as a bar, line, or pie chart, and all 50 pages
+converted with `success` status. Its MLX peak RSS is 16.03 GiB against the 5.13 GiB recorded on
+2026-09-04; the run does not isolate what changed between the two dependency stacks.
+
 ## Clean-wheel qualification
 
 The historical clean-wheel lane passed 9 tests in 160.35 seconds. The current boundary keeps the
