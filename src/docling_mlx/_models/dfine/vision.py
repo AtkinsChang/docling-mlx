@@ -11,6 +11,7 @@ from collections.abc import Callable
 import mlx.core as mx
 import mlx.nn as nn
 
+from .._compile import compile_exclusive
 from .config import DFineBackboneConfig, DFineConfig, DFineEncoderConfig
 
 
@@ -593,7 +594,7 @@ class DFineVisionTower(nn.Module):
 
     def compile_backbone(self) -> None:
         if self._backbone_forward is None:
-            self._backbone_forward = mx.compile(self.backbone, inputs=self.backbone.state)
+            self._backbone_forward = compile_exclusive(self.backbone, inputs=self.backbone.state)
 
 
 def _upsample_nearest_2x(x: mx.array) -> mx.array:

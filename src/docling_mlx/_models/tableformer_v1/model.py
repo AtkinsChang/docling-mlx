@@ -12,6 +12,7 @@ from typing import Any, cast
 import mlx.core as mx
 import mlx.nn as nn
 
+from .._compile import compile_exclusive
 from ._source import source_parameter_filter
 from .bbox import (
     BBoxDecoder,
@@ -48,7 +49,7 @@ class TableFormerV1(nn.Module):
 
     def compile_image_backbone(self) -> None:
         if self._encoder_forward is None:
-            self._encoder_forward = mx.compile(self._encoder, inputs=self._encoder.state)
+            self._encoder_forward = compile_exclusive(self._encoder, inputs=self._encoder.state)
 
     def _encode(self, pixels: mx.array) -> tuple[mx.array, mx.array]:
         size = self.config.image_size

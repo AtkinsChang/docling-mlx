@@ -19,6 +19,18 @@ identity and return pure detections, classifications, or table data. Their scope
 model family expressed by the Hugging Face config (RT-DETR-v2, D-FINE, EfficientNet variants). A
 stage owns Docling labels, page state, artifact resolution, and accelerator validation.
 
+An engine is constructed once and its `predict()` runs on whichever pipeline thread Docling
+schedules the stage on. MLX 0.32.2 already hands every thread its own default stream, so those
+threads do not queue behind one another and no extra stream is needed. Sharing a compiled function
+across them is still unsafe: MLX traces a compiled function on its first call for each input shape,
+and a second thread inside the same compiled function observes tracer arrays and fails to evaluate
+them with `[eval] Attempting to eval an array without a primitive`. Every compiled backbone is
+therefore built through `_models/_compile.py`, which admits one thread at a time. The lock covers
+one compiled call, not a prediction, so preprocessing, postprocessing, and TableFormer's
+autoregressive decode loop still overlap; the trace state is per compiled function, so distinct
+engines never contend. Warming a single shape at initialization would not do, because a later batch
+of a new shape traces again. Serializing the compiled call changed no measured latency.
+
 ## Official Docling hooks
 
 The package entry point exposes only the factories Docling provides (observed at 2.126.0):
