@@ -108,9 +108,13 @@ ms and 80.23 ms. These are descriptive M4 Pro measurements, not a general speedu
 
 The greedy loop submits the next decode step with `mx.async_eval` before reading the current token
 back to the host, following the mlx-lm `generate_step` pattern, and tests EOS on the token integers
-the host already holds instead of building a second `mx.all` graph. The EOS decision lands one step
-late, so one step past the stop condition is computed and discarded. The loop does not build that
-lookahead on the final permitted step, so a no-EOS result still contains 513 IDs including BOS.
+the host already holds instead of building a second `mx.all` graph. As first written the loop did
+not actually overlap: it read the token through `next_token.flatten().tolist()`, and that `flatten`
+built a new lazy array after the lookahead had been submitted, so evaluating it queued behind step
+N+1 and every step ran in lockstep. The section below records removing that operation. The EOS
+decision lands one step late, so one step past the stop condition is computed and discarded. The
+loop does not build that lookahead on the final permitted step, so a no-EOS result still contains
+513 IDs including BOS.
 
 Measured on an Apple M4 Pro, 48 GiB, macOS 26.5.2, Python 3.13.13, MLX 0.32.2, Transformers 5.16.1,
 docling-ibm-models 4.0.2, with `MLX_ENABLE_TF32=0`, on 2026-09-05. One fresh process per side ran the
@@ -130,6 +134,34 @@ all 36 gates match field for field, and both sides reproduce the numeric-parity 
 exactly, worst observed encoder max `6.68e-6` against the `1e-4` cap, greedy-step logits max
 `6.58e-5` and final-logit max `1.30e-4` against the `1e-3` cap, and normalized bbox max `1.55e-6`
 against the `1e-4` cap.
+
+### Reading the emitted token without a new operation
+
+Reading the already submitted `(batch, 1)` array with `next_token.tolist()`, and testing
+`row[0]` per row, removes the operation that serialized the loop. Any new operation at that point,
+`flatten`, `squeeze`, `reshape`, or a slice alike, recreates the stall. TableFormer v1 never had the
+defect: it reads its already submitted token with `.item()`.
+
+Measured on an Apple M4 Pro, 48 GiB, macOS 26.5.2, Python 3.13.13, MLX 0.32.2, Transformers 5.16.1,
+docling-ibm-models 4.0.2, with `MLX_ENABLE_TF32=0`, on 2026-09-05. Seven fresh processes per side,
+run alternately in one sweep to reduce temporal bias, each the engine boundary over the three
+qualified crops in one batch of three with 5 warmups and 30 measured rounds; the values below
+divide each batch measurement by three and the table reports the median across the seven runs.
+
+| Profile | IDs per crop | p50 before | p50 after | Mean before | Mean after | p50 improvement |
+| ------- | ------------ | ---------: | --------: | ----------: | ---------: | --------------: |
+| V2      | 56/513/227   |  370.08 ms | 267.71 ms |   368.72 ms |  268.17 ms |           27.7% |
+
+The before side's seven p50 values formed a higher and a lower group: 370.95, 371.88, 271.46,
+372.60, 370.08, 270.89, and 287.08 ms. That grouping is consistent with scheduling-sensitive
+behaviour, but the timings alone do not establish the cause of the grouping; the code analysis
+above is what identifies the serializing operation. The after side is stable at 267.53 to 269.88 ms
+with one faster outlier at 203.89 ms, so the before side's lower group matches the after side's
+typical run.
+
+Token IDs, OTSL tokens, and cell boxes over the three crops are byte-identical before and after, as
+are the TableFormer v1 Accurate and Fast captures taken alongside them. All 36 gates of
+`tools/tableformer_v2/validate_parity.py` match field for field between the two sides.
 
 ## Repository qualification
 
