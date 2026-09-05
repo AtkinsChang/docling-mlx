@@ -50,12 +50,15 @@ jobs:
   mac:
     runs-on: macos-26
     timeout-minutes: 30
+    strategy:
+      matrix:
+        python: ["3.13", "3.14"]
     steps:
       - uses: actions/checkout@v7
 
       - uses: astral-sh/setup-uv@v10.0.1
         with:
-          python-version: "3.13"
+          python-version: ${{ matrix.python }}
 
       # The mlx lane reads the installed mlx-vlm distribution, so the vlm extra
       # is part of its footprint.
@@ -91,7 +94,7 @@ jobs:
           set -euo pipefail
           wheel="$(find dist -maxdepth 1 -type f -name '*.whl' -print -quit)"
           test -n "$wheel"
-          uv venv --python 3.13 .ci-wheel-venv
+          uv venv --python "${{ matrix.python }}" .ci-wheel-venv
           uv pip install --python .ci-wheel-venv/bin/python "$wheel"
           .ci-wheel-venv/bin/python -c "import docling_mlx, docling_mlx.plugins"
 

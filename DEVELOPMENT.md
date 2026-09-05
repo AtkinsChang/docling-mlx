@@ -138,11 +138,11 @@ CI runs three jobs. On Ubuntu, `lint` runs the repository-wide native checks plu
 gitleaks scan, a Prettier check of the workflow YAML, and `committed` on pull requests; `test` runs
 the portable lane on Python 3.13 and 3.14: lock check, frozen dev sync, mypy, default pytest, wheel
 build, and an installed-wheel import smoke. On a GitHub-hosted Apple Silicon macOS runner, `mac`
-runs the default lane, stages the pinned inputs with `tools/stage_lane_inputs.py`, runs the `mlx`
-lane and fails when it reports a skip, and finishes with the wheel build and import smoke against
-the real Metal MLX wheel. The `parity` and `release` lanes stay local to the maintainer; they need
-the reference dependencies, the source snapshots, and staged reference captures that CI does not
-carry.
+runs on Python 3.13 and 3.14: the default lane, the pinned inputs staged with
+`tools/stage_lane_inputs.py`, the `mlx` lane failing on any reported skip, and the wheel build and
+import smoke against the real Metal MLX wheel. The `parity` and `release` lanes stay local to the
+maintainer; they need the reference dependencies, the source snapshots, and staged reference
+captures that CI does not carry.
 
 ## Stage artifacts
 
