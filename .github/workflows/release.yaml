@@ -13,6 +13,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      actions: write
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
@@ -22,6 +23,35 @@ jobs:
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      # release-please bumps pyproject.toml but cannot edit uv.lock, and the pushes
+      # and pull requests it makes with the workflow token start no workflow runs,
+      # so refresh the lock on the release branch and run CI on it explicitly.
+      - if: steps.release.outputs.prs_created == 'true'
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+
+      - if: steps.release.outputs.prs_created == 'true'
+        uses: astral-sh/setup-uv@v10.0.1
+        with:
+          python-version: "3.13"
+
+      - if: steps.release.outputs.prs_created == 'true'
+        name: Refresh the lockfile and run CI on the release branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+        run: |
+          set -euo pipefail
+          uv lock
+          if ! git diff --quiet -- uv.lock; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -am "chore: refresh the lockfile for the release"
+            git push origin "HEAD:$BRANCH"
+          fi
+          gh workflow run ci.yaml --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"
 
   publish:
     needs: release-please

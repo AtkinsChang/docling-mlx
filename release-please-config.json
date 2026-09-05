@@ -6,13 +6,6 @@
   "packages": {
     ".": {
       "package-name": "docling-mlx",
-      "extra-files": [
-        {
-          "type": "toml",
-          "path": "uv.lock",
-          "jsonpath": "$.package[?(@.name=='docling-mlx')].version"
-        }
-      ],
       "changelog-sections": [
         {
           "type": "feat",
