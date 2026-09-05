@@ -134,8 +134,9 @@ print(prediction.cell_bboxes)
 
 The initial release generates each image independently. `predict()` preserves input order but
 does not claim batched autoregressive decoding. Empty input returns without initialization. Lazy
-initialization is guarded once per engine; prediction calls are not serialized, and separate engines
-may run concurrently.
+initialization is guarded once per engine; prediction calls are not serialized apart from the
+compiled image backbone, and separate engines may run concurrently. See
+[`docs/architecture.md`](../architecture.md) for the threading rules the engines share.
 
 See [validation.md](validation.md) for exact parity, real-fixture, offline pipeline, packaging,
 concurrency, and performance evidence.

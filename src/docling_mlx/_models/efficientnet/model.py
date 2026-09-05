@@ -16,6 +16,7 @@ from typing import Any
 import mlx.core as mx
 import mlx.nn as nn
 
+from .._compile import compile_exclusive
 from .config import EfficientNetConfig
 
 
@@ -254,7 +255,7 @@ class EfficientNet(nn.Module):
 
     def compile_forward(self) -> None:
         if self._compiled_forward is None:
-            self._compiled_forward = mx.compile(self._forward_logits, inputs=self.state)
+            self._compiled_forward = compile_exclusive(self._forward_logits, inputs=self.state)
 
     def forward_intermediates(self, pixels: mx.array) -> dict[str, mx.array]:
         intermediates: dict[str, mx.array] = {}

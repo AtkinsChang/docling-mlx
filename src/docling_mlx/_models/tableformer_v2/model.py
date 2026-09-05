@@ -14,6 +14,7 @@ from typing import cast
 import mlx.core as mx
 import mlx.nn as nn
 
+from docling_mlx._models._compile import compile_exclusive
 from docling_mlx._models.tableformer_v2.bbox import BboxHead
 from docling_mlx._models.tableformer_v2.config import TableFormerV2Config
 from docling_mlx._models.tableformer_v2.decoder import (
@@ -112,7 +113,7 @@ class TableFormerV2(nn.Module):
 
     def compile_image_backbone(self) -> None:
         if self._feature_forward is None:
-            self._feature_forward = mx.compile(
+            self._feature_forward = compile_exclusive(
                 self.feature_extractor,
                 inputs=self.feature_extractor.state,
             )

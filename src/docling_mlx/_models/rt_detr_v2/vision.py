@@ -20,6 +20,7 @@ from collections.abc import Callable
 import mlx.core as mx
 import mlx.nn as nn
 
+from .._compile import compile_exclusive
 from .config import (
     RtDetrResNetConfig,
     RtDetrV2Config,
@@ -765,7 +766,7 @@ class VisionTower(nn.Module):
 
     def compile_backbone(self) -> None:
         if self._backbone_forward is None:
-            self._backbone_forward = mx.compile(self.backbone, inputs=self.backbone.state)
+            self._backbone_forward = compile_exclusive(self.backbone, inputs=self.backbone.state)
 
 
 # ─── helpers ───
