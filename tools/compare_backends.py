@@ -2067,6 +2067,14 @@ def summarize(args: argparse.Namespace) -> None:
         if not {"mlx", "official"}.issubset(pair):
             raise ValueError(f"Missing MLX/official pair for {component}: {sorted(pair)}")
         mlx, official = pair["mlx"], pair["official"]
+        for implementation, report in pair.items():
+            if "outputs" in report and (
+                report["input_ids"] != mlx["input_ids"]
+                or set(report["outputs"]) != set(mlx["input_ids"])
+            ):
+                raise ValueError(
+                    f"Mismatched or incomplete inputs for {component}/{implementation}"
+                )
         official_mps = pair.get("official-mps")
         quality, differences = _quality_for(component, mlx, official, official_mps)
         lines += [f"## {component}", "", _machine_line(mlx), ""]
