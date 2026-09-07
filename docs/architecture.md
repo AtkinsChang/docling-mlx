@@ -73,10 +73,13 @@ Use `MlxStandardPdfPipeline` in a `PdfFormatOption` rather than subclassing a Do
 an application. It calls the official initialization and then `configure()`. Because Docling creates
 the picture classifier before `StandardPdfPipeline._init_models`, the package temporarily disables
 the MLX picture/chart pair for that bootstrap, restores the original options, and performs the
-single replacement. Call `configure()` directly only on a standard pipeline constructed with the
-MLX-owned picture and chart stages disabled; enabling those options during plain construction fails
-inside Docling before `configure()` can run. After bootstrap, `configure()` only recomputes
-Docling's five-flag `keep_backend` expression; nothing else from Docling's pipeline is copied.
+single replacement. An official chart stage is also deferred when using the MLX picture classifier:
+Docling's chart flag enables its stock classifier, so `configure()` constructs the selected official
+chart stage after installing the MLX classifier. Call `configure()` directly only on a standard
+pipeline constructed with picture classification and chart extraction disabled when the picture
+classifier is MLX-owned; enabling those options during plain construction fails
+inside Docling before `configure()` can run. After restoring the options, `configure()` also
+recomputes Docling's five-flag `keep_backend` expression.
 
 ## Lifecycle
 

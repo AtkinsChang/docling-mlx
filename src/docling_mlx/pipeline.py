@@ -61,6 +61,33 @@ def configure(pipeline: StandardPdfPipeline) -> None:
                 accelerator_options=options.accelerator_options,
             )
         )
+    elif options.do_chart_extraction and isinstance(
+        picture_options, MlxDocumentPictureClassifierOptions
+    ):
+        from docling.datamodel.chart_extraction_options import ChartExtractionModelKind
+        from docling.models.stages.chart_extraction.granite_vision import (
+            ChartExtractionModelGraniteVision,
+            ChartExtractionModelGraniteVisionV4,
+        )
+
+        chart_types = (ChartExtractionModelGraniteVision, ChartExtractionModelGraniteVisionV4)
+        if not any(type(stage) in chart_types for stage in pipeline.enrichment_pipe):
+            pipeline.enrichment_pipe.extend(
+                [
+                    ChartExtractionModelGraniteVision(
+                        enabled=chart_options.model == ChartExtractionModelKind.GRANITE_VISION,
+                        artifacts_path=pipeline.artifacts_path,
+                        options=chart_options,
+                        accelerator_options=options.accelerator_options,
+                    ),
+                    ChartExtractionModelGraniteVisionV4(
+                        enabled=chart_options.model == ChartExtractionModelKind.GRANITE_VISION_V4,
+                        artifacts_path=pipeline.artifacts_path,
+                        options=chart_options,
+                        accelerator_options=options.accelerator_options,
+                    ),
+                ]
+            )
 
     pipeline.keep_backend = any(
         (
@@ -96,8 +123,7 @@ class MlxStandardPdfPipeline(StandardPdfPipeline):
                 update={
                     "do_picture_classification": pipeline_options.do_picture_classification
                     and not isinstance(picture_options, MlxDocumentPictureClassifierOptions),
-                    "do_chart_extraction": pipeline_options.do_chart_extraction
-                    and not isinstance(chart_options, MlxChartExtractionModelOptions),
+                    "do_chart_extraction": False,
                 },
             )
             if self._mlx_bootstrap
