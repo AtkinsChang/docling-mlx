@@ -14,6 +14,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 from docling_mlx.presets import PRESETS
+from tools._common.atomic import _atomic_output
 from tools.document_figure.source import SOURCE_FILES, SOURCE_REPO, SOURCE_REVISION
 from tools.layout_egret.source import SOURCES as EGRET_SOURCES
 
@@ -55,14 +56,15 @@ def stage(
     if target.is_dir():
         print(f"cached {target}")
         return target
-    snapshot_download(
-        repo_id=repo_id,
-        revision=revision,
-        local_dir=target,
-        allow_patterns=None if allow_patterns is None else list(allow_patterns),
-    )
-    # snapshot_download leaves its own bookkeeping copy beside the files.
-    shutil.rmtree(target / ".cache", ignore_errors=True)
+    with _atomic_output(target) as temporary:
+        snapshot_download(
+            repo_id=repo_id,
+            revision=revision,
+            local_dir=temporary,
+            allow_patterns=None if allow_patterns is None else list(allow_patterns),
+        )
+        # snapshot_download leaves its own bookkeeping copy beside the files.
+        shutil.rmtree(temporary / ".cache", ignore_errors=True)
     print(f"staged {target} from {repo_id}@{revision}")
     return target
 

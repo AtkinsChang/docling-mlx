@@ -101,15 +101,16 @@ Keep machine-specific lane variables in the ignored `.envrc.local` file.
 The staging tool downloads every artifact and source the `mlx` lane reads, each pinned to the
 revision `src/docling_mlx/presets.py`, `tools/layout_egret/source.py`, and
 `tools/document_figure/source.py` record. It writes the flat `.artifacts` layout the lane expects,
-leaves an already staged directory alone so a second run costs nothing, and prints the source
-variables to export:
+publishes each directory only after its download completes, leaves an already staged directory
+alone so a second run costs nothing, and prints the source variables to export:
 
 ```bash
 uv run --no-sync python -m tools.stage_lane_inputs
 ```
 
-It takes `--artifacts DIR` and `--sources DIR` to stage elsewhere. The parity lane needs the
-TableFormer sources and the detector inputs below as well.
+It takes `--artifacts DIR` and `--sources DIR` to stage elsewhere. If an older staging run left a
+partial final directory, remove that directory before retrying; existing directories are treated
+as complete. The parity lane needs the TableFormer sources and the detector inputs below as well.
 
 The TableFormer download helpers print the cache directory to export:
 
