@@ -243,9 +243,11 @@ uv run --no-sync python -m tools.benchmark --component document-figure \
 `tools/compare_backends.py` reproduces the full DPBench backend comparison with one fresh process
 per component and implementation. It materializes the pinned page, picture, and table inputs,
 resumes completed raw JSON reports under `reports/backend-bench/`, and writes the paired quality
-and latency tables used by the component validation documents. Its `pipeline` component measures the
-reduced standard pipeline over all 200 pages with three timed rounds, and `pipeline_granite`
-measures the full pipeline with the Granite Vision table structure and chart extraction stages over
+and latency tables used by the component validation documents. Summaries require each paired report
+to list the same inputs in the same order and contain outputs for exactly those inputs.
+Its `pipeline` component measures the reduced standard pipeline over all 200 pages with three timed
+rounds, and `pipeline_granite` measures the full pipeline with the Granite Vision table structure and
+chart extraction stages over
 the first 50 pages with one timed round, because Docling's official Granite stages are CPU-only on
 macOS:
 
