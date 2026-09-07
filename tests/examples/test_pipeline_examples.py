@@ -12,6 +12,7 @@ from subprocess import CalledProcessError
 
 import pypdfium2  # noqa: F401
 import pytest
+from docling.datamodel.chart_extraction_options import ChartExtractionModelKind
 from packaging.requirements import Requirement
 
 EXAMPLES = Path(__file__).parents[2] / "examples"
@@ -136,19 +137,27 @@ def test_compare_records_one_failed_docling_eval_modality_without_aborting(
     assert '"status": "failed"' in statuses
 
 
+@pytest.mark.parametrize(
+    ("model", "expected_type"),
+    [
+        (ChartExtractionModelKind.GRANITE_VISION, "legacy"),
+        (ChartExtractionModelKind.GRANITE_VISION_V4, "v4"),
+    ],
+)
 def test_standard_pipeline_preserves_official_chart_during_mlx_picture_bootstrap(
     monkeypatch: pytest.MonkeyPatch,
+    model: ChartExtractionModelKind,
+    expected_type: str,
 ) -> None:
-    class FakeDoclingPicture:
-        def __init__(self, **_kwargs: object) -> None:
-            pass
-
     class FakeDoclingChart:
         def __init__(self, *, enabled: bool, **_kwargs: object) -> None:
             self.enabled = enabled
+            self.kind = "legacy"
 
     class FakeDoclingChartV4(FakeDoclingChart):
-        pass
+        def __init__(self, *, enabled: bool, **kwargs: object) -> None:
+            super().__init__(enabled=enabled, **kwargs)
+            self.kind = "v4"
 
     class FakeMlxPicture:
         def __init__(self, **_kwargs: object) -> None:
@@ -158,15 +167,6 @@ def test_standard_pipeline_preserves_official_chart_during_mlx_picture_bootstrap
     monkeypatch.setattr(
         "docling.pipeline.base_pipeline.ConvertPipeline._get_picture_description_model",
         lambda _self, **_kwargs: object(),
-    )
-    monkeypatch.setattr(
-        "docling.pipeline.base_pipeline.DocumentPictureClassifier",
-        FakeDoclingPicture,
-    )
-    monkeypatch.setattr(
-        "docling.models.stages.picture_classifier.document_picture_classifier."
-        "DocumentPictureClassifier",
-        FakeDoclingPicture,
     )
     monkeypatch.setattr(
         "docling.models.stages.chart_extraction.granite_vision.ChartExtractionModelGraniteVision",
@@ -183,12 +183,17 @@ def test_standard_pipeline_preserves_official_chart_during_mlx_picture_bootstrap
 
     options = pipeline.build_options()
     options.do_chart_extraction = True
+    options.chart_extraction_options.model = model
     instance = MlxStandardPdfPipeline(options)
+    configure(instance)
 
+    assert instance.pipeline_options is options
+    assert options.do_picture_classification is True
+    assert options.do_chart_extraction is True
     assert any(type(stage) is FakeMlxPicture for stage in instance.enrichment_pipe)
-    assert any(
-        type(stage) is FakeDoclingChartV4 and stage.enabled for stage in instance.enrichment_pipe
-    )
+    charts = [stage for stage in instance.enrichment_pipe if isinstance(stage, FakeDoclingChart)]
+    assert len(charts) == 2
+    assert [stage.kind for stage in charts if stage.enabled] == [expected_type]
 
 
 def test_configure_replaces_the_non_pluggable_chart_stage(
