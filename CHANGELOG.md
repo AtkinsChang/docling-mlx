@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.2](https://github.com/AtkinsChang/docling-mlx/compare/v0.1.1...v0.1.2) (2026-09-15)
+
+
+### Bug Fixes
+
+* **pipeline:** defer official charts during MLX classifier bootstrap ([27d8f81](https://github.com/AtkinsChang/docling-mlx/commit/27d8f8152d4f7483d34b7879ada8d1d2737c9c85))
+* **tools:** publish lane downloads only after completion ([d6b91d6](https://github.com/AtkinsChang/docling-mlx/commit/d6b91d60d5792fa256f4beb742b0eb993f86a5ed))
+* **tools:** reject incomplete backend comparison inputs ([de14ee9](https://github.com/AtkinsChang/docling-mlx/commit/de14ee972b6b0fc07fe11f405ab3fd3ed6586706))
+
 ## [0.1.1](https://github.com/AtkinsChang/docling-mlx/compare/v0.1.0...v0.1.1) (2026-09-05)
 
 
