@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: astral-sh/setup-uv@v10.0.1
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           python-version: ${{ matrix.python }}
 
@@ -56,7 +56,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: astral-sh/setup-uv@v10.0.1
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           python-version: ${{ matrix.python }}
 
@@ -106,7 +106,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: astral-sh/setup-uv@v10.0.1
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           python-version: "3.13"
 
@@ -130,4 +130,4 @@ jobs:
           /tmp/gitleaks git --redact --no-banner --exit-code 2 .
 
       - if: github.event_name == 'pull_request'
-        uses: crate-ci/committed@v1.1.11
+        uses: crate-ci/committed@v1.1.12
